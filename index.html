@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>L.A.P.D. Evidence Creator Platform</title>
+    <style>
+        :root {
+            /* * ESTÁNDAR RUBIK SOTA (Perceptual Color / OKLCH) */
+            --bg: #000000;
+            --surface: #1a0f0a;
+            --text: #E0E0E0;
+            --muted: #888888;
+            --border: #333333;
+            --gold: #D4AF37;
+            --gold-soft: rgba(212, 175, 55, 0.2);
+            --gold-hover: #e5c355;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--bg);
+            font-family: monospace;
+            color: var(--text);
+            display: flex;
+        }
+        
+        /* Contenedor WebGL Independiente */
+        #canvas-container {
+            position: relative;
+            flex-grow: 1;
+            height: 100%;
+            cursor: grab;
+            background: radial-gradient(circle at center, var(--surface) 0%, #050201 80%, var(--bg) 100%);
+        }
+        
+        #canvas-container:active { cursor: grabbing; }
+        
+        canvas { 
+            display: block; 
+            width: 100%; 
+            height: 100%; 
+        }
+
+        /* Interfaz de la Plataforma (Rubik SOTA) */
+        #ui-panel {
+            position: relative;
+            width: 320px;
+            min-width: 320px;
+            height: 100%;
+            background-color: var(--surface);
+            border-left: 1px solid var(--border);
+            z-index: 20;
+            display: flex;
+            flex-direction: column;
+            padding: 24px;
+            box-sizing: border-box;
+            box-shadow: -5px 0 25px rgba(0,0,0,0.8);
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        .panel-header {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--gold);
+            margin-bottom: 24px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            border-bottom: 1px dashed var(--border);
+            padding-bottom: 12px;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-group label {
+            display: block;
+            color: var(--muted);
+            font-size: 11px;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .form-control {
+            width: 100%;
+            background-color: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 10px;
+            font-family: monospace;
+            font-size: 13px;
+            box-sizing: border-box;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--gold);
+            box-shadow: 0 0 8px var(--gold-soft);
+        }
+
+        textarea.form-control {
+            resize: vertical;
+            min-height: 70px;
+        }
+
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            font-family: monospace;
+            text-transform: uppercase;
+            font-size: 12px;
+            font-weight: bold;
+            transition: all 0.2s;
+            margin-top: 5px;
+            box-sizing: border-box;
+            -webkit-appearance: none;
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            border: 1px dashed var(--gold);
+            color: var(--gold);
+        }
+
+        .btn-outline:hover {
+            background-color: var(--gold-soft);
+            color: var(--gold-hover);
+        }
+
+        .btn-solid {
+            background-color: var(--gold);
+            border: 1px solid var(--gold);
+            color: var(--bg);
+            margin-top: 20px;
+        }
+
+        .btn-solid:hover {
+            background-color: var(--gold-hover);
+            box-shadow: 0 0 15px var(--gold-soft);
+        }
+
+        input[type="file"] {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0,0,0,0);
+            border: 0;
+        }
+
+        #media-preview-container {
+            margin-top: 10px;
+            display: none;
+            position: relative;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            padding: 8px;
+            box-sizing: border-box;
+        }
+
+        #remove-media {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(0,0,0,0.8);
+            border: 1px solid var(--gold);
+            color: var(--gold);
+            cursor: pointer;
+            padding: 2px 6px;
+            font-size: 10px;
+        }
+
+        .platform-footer {
+            margin-top: auto;
+            padding-top: 20px;
+            text-align: center;
+            font-size: 10px;
+            color: var(--muted);
+            border-top: 1px dashed var(--border);
+            letter-spacing: 1px;
+        }
+
+        #overlay-text {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            color: var(--gold);
+            pointer-events: none;
+            font-size: 13px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            z-index: 10;
+        }
+
+        #cursor {
+            position: absolute;
+            width: 36px;
+            height: 36px;
+            border: 2px solid var(--gold);
+            border-radius: 50%;
+            box-shadow: 0 0 15px var(--gold-soft), inset 0 0 10px var(--gold-soft);
+            transform: translate(-50%, -50%) scale(0.5);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.15s ease-out, transform 0.15s ease-out;
+            z-index: 15;
+        }
+        
+        #cursor.active {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+        
+        #hidden-video { display: none; }
+    </style>
+</head>
+<body>
+    
+    <!-- Lado Izquierdo: Canvas -->
+    <div id="canvas-container">
+        <div id="overlay-text">L.A.P.D. ARCHIVES // EVIDENCE #884</div>
+        <div id="cursor"></div>
+        <canvas id="glcanvas"></canvas>
+    </div>
+
+    <!-- Lado Derecho: UI Panel SOTA -->
+    <div id="ui-panel">
+        <div class="panel-header">Platform Settings</div>
+        
+        <div class="form-group">
+            <label>Title Header</label>
+            <input type="text" id="input-title" class="form-control" value="L.A.P.D. EVIDENCE">
+        </div>
+        
+        <div class="form-group">
+            <label>Case Number</label>
+            <input type="text" id="input-case" class="form-control" value="Case: #884-Black Dahlia">
+        </div>
+
+        <div class="form-group">
+            <label>Date</label>
+            <input type="text" id="input-date" class="form-control" value="Oct 14, 1947">
+        </div>
+
+        <div class="form-group">
+            <label>Main Content (Quote / Notes)</label>
+            <textarea id="input-content" class="form-control">"Meet me at the pier.
+Bring the files."</textarea>
+        </div>
+
+        <div class="form-group">
+            <label>Signature</label>
+            <input type="text" id="input-signature" class="form-control" value="- V.">
+        </div>
+
+        <div class="form-group">
+            <label>Media Attachment (Image/Video)</label>
+            <button type="button" id="btn-upload-proxy" class="btn btn-outline">Upload File</button>
+            <input type="file" id="media-upload" accept="image/*,video/*">
+            
+            <div id="media-preview-container">
+                <div style="font-size: 11px; color: var(--gold);" id="media-type-label"></div>
+                <button id="remove-media" type="button">X</button>
+            </div>
+        </div>
+
+        <button id="btn-export" class="btn btn-solid" type="button">EXPORT EVIDENCE</button>
+
+        <div class="platform-footer">
+            IDEA BY RUBIK SOTA 629554870
+        </div>
+    </div>
+
+    <video id="hidden-video" loop muted playsinline></video>
+
+    <script>
+        // --- ESTADO DE LA PLATAFORMA ---
+        const platformState = {
+            title: "L.A.P.D. EVIDENCE",
+            caseStr: "Case: #884-Black Dahlia",
+            dateStr: "Date: Oct 14, 1947",
+            content: ["\"Meet me at the pier.", "Bring the files.\""],
+            signature: "- V.",
+            mediaType: null,
+            mediaElement: null,
+            needsTextureUpdate: true,
+            exportNextFrame: false 
+        };
+
+        // --- REFERENCIAS UI ---
+        const uiTitle = document.getElementById('input-title');
+        const uiCase = document.getElementById('input-case');
+        const uiDate = document.getElementById('input-date');
+        const uiContent = document.getElementById('input-content');
+        const uiSignature = document.getElementById('input-signature');
+        
+        const btnUploadProxy = document.getElementById('btn-upload-proxy');
+        const uiMediaUpload = document.getElementById('media-upload');
+        const mediaPreviewContainer = document.getElementById('media-preview-container');
+        const mediaTypeLabel = document.getElementById('media-type-label');
+        const btnRemoveMedia = document.getElementById('remove-media');
+        const btnExport = document.getElementById('btn-export');
+        const hiddenVideo = document.getElementById('hidden-video');
+
+        function updateStateAndRequestRender() {
+            platformState.title = uiTitle.value;
+            platformState.caseStr = uiCase.value;
+            platformState.dateStr = uiDate.value;
+            platformState.content = uiContent.value.split('\n');
+            platformState.signature = uiSignature.value;
+            platformState.needsTextureUpdate = true;
+        }
+
+        uiTitle.addEventListener('input', updateStateAndRequestRender);
+        uiCase.addEventListener('input', updateStateAndRequestRender);
+        uiDate.addEventListener('input', updateStateAndRequestRender);
+        uiContent.addEventListener('input', updateStateAndRequestRender);
+        uiSignature.addEventListener('input', updateStateAndRequestRender);
+
+        btnUploadProxy.addEventListener('click', (e) => {
+            e.preventDefault();
+            uiMediaUpload.click();
+        });
+
+        uiMediaUpload.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const url = URL.createObjectURL(file);
+            
+            if (file.type.startsWith('video/')) {
+                platformState.mediaType = 'video';
+                hiddenVideo.src = url;
+                hiddenVideo.play();
+                platformState.mediaElement = hiddenVideo;
+                mediaTypeLabel.innerText = "ATTACHED: VIDEO";
+                mediaPreviewContainer.style.display = 'block';
+            } else if (file.type.startsWith('image/')) {
+                platformState.mediaType = 'image';
+                const img = new Image();
+                img.onload = () => {
+                    platformState.mediaElement = img;
+                    platformState.needsTextureUpdate = true;
+                };
+                img.src = url;
+                mediaTypeLabel.innerText = "ATTACHED: IMAGE";
+                mediaPreviewContainer.style.display = 'block';
+            }
+        });
+
+        btnRemoveMedia.addEventListener('click', () => {
+            platformState.mediaType = null;
+            platformState.mediaElement = null;
+            hiddenVideo.pause();
+            hiddenVideo.src = "";
+            mediaPreviewContainer.style.display = 'none';
+            uiMediaUpload.value = '';
+            platformState.needsTextureUpdate = true;
+        });
+
+        btnExport.addEventListener('click', () => {
+            platformState.exportNextFrame = true;
+        });
+
+        // --- WEBGL Y FÍSICAS SETUP ---
+        const canvas = document.getElementById('glcanvas');
+        // preserveDrawingBuffer es vital para que la exportación PNG no sea negra
+        const gl = canvas.getContext('webgl', { preserveDrawingBuffer: true });
+        const cursorUI = document.getElementById('cursor');
+        const canvasContainer = document.getElementById('canvas-container');
+
+        // SOLUCIÓN 1: Matemáticas de Matriz Column-Major (Estrictas WebGL)
+        const m4 = {
+            identity: function() {
+                return new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]);
+            },
+            translation: function(tx, ty, tz) {
+                return new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, tx,ty,tz,1]);
+            },
+            perspective: function(fov, aspect, near, far) {
+                let f = 1.0 / Math.tan(fov / 2);
+                let nf = 1 / (near - far);
+                return new Float32Array([
+                    f / aspect, 0, 0, 0,
+                    0, f, 0, 0,
+                    0, 0, (far + near) * nf, -1,
+                    0, 0, (2 * far * near) * nf, 0
+                ]);
+            },
+            multiply: function(a, b) {
+                // Multiplicación real Column-Major (desenrollada para evitar errores lógicos)
+                let out = new Float32Array(16);
+                let a00 = a[0], a01 = a[1], a02 = a[2], a03 = a[3];
+                let a10 = a[4], a11 = a[5], a12 = a[6], a13 = a[7];
+                let a20 = a[8], a21 = a[9], a22 = a[10], a23 = a[11];
+                let a30 = a[12], a31 = a[13], a32 = a[14], a33 = a[15];
+
+                let b0 = b[0], b1 = b[1], b2 = b[2], b3 = b[3];
+                out[0] = b0*a00 + b1*a10 + b2*a20 + b3*a30;
+                out[1] = b0*a01 + b1*a11 + b2*a21 + b3*a31;
+                out[2] = b0*a02 + b1*a12 + b2*a22 + b3*a32;
+                out[3] = b0*a03 + b1*a13 + b2*a23 + b3*a33;
+
+                b0 = b[4]; b1 = b[5]; b2 = b[6]; b3 = b[7];
+                out[4] = b0*a00 + b1*a10 + b2*a20 + b3*a30;
+                out[5] = b0*a01 + b1*a11 + b2*a21 + b3*a31;
+                out[6] = b0*a02 + b1*a12 + b2*a22 + b3*a32;
+                out[7] = b0*a03 + b1*a13 + b2*a23 + b3*a33;
+
+                b0 = b[8]; b1 = b[9]; b2 = b[10]; b3 = b[11];
+                out[8] = b0*a00 + b1*a10 + b2*a20 + b3*a30;
+                out[9] = b0*a01 + b1*a11 + b2*a21 + b3*a31;
+                out[10] = b0*a02 + b1*a12 + b2*a22 + b3*a32;
+                out[11] = b0*a03 + b1*a13 + b2*a23 + b3*a33;
+
+                b0 = b[12]; b1 = b[13]; b2 = b[14]; b3 = b[15];
+                out[12] = b0*a00 + b1*a10 + b2*a20 + b3*a30;
+                out[13] = b0*a01 + b1*a11 + b2*a21 + b3*a31;
+                out[14] = b0*a02 + b1*a12 + b2*a22 + b3*a32;
+                out[15] = b0*a03 + b1*a13 + b2*a23 + b3*a33;
+                return out;
+            }
+        };
+
+        function project3DTo2D(x, y, z, viewProjMatrix, width, height) {
+            let w = x * viewProjMatrix[3] + y * viewProjMatrix[7] + z * viewProjMatrix[11] + viewProjMatrix[15];
+            if (w === 0) return null;
+            let px = (x * viewProjMatrix[0] + y * viewProjMatrix[4] + z * viewProjMatrix[8] + viewProjMatrix[12]) / w;
+            let py = (x * viewProjMatrix[1] + y * viewProjMatrix[5] + z * viewProjMatrix[9] + viewProjMatrix[13]) / w;
+            return {
+                x: (px + 1) * 0.5 * width,
+                y: (1 - py) * 0.5 * height
+            };
+        }
+
+        // --- COMPOSITOR DE TEXTURAS DINÁMICO ---
+        const texSize = 1024;
+        const ctxCanvas = document.createElement('canvas');
+        ctxCanvas.width = texSize;
+        ctxCanvas.height = texSize;
+        const ctx = ctxCanvas.getContext('2d', { willReadFrequently: true });
+        let basePaperData = null;
+
+        function generateBasePaper() {
+            ctx.fillStyle = '#d1c099';
+            ctx.fillRect(0, 0, texSize, texSize);
+            const imgData = ctx.getImageData(0, 0, texSize, texSize);
+            const data = imgData.data;
+            for (let i = 0; i < data.length; i += 4) {
+                let noise = (Math.random() - 0.5) * 15;
+                let x = (i / 4) % texSize;
+                let y = Math.floor((i / 4) / texSize);
+                let dx = x - (texSize/2);
+                let dy = y - (texSize/2);
+                let dist = Math.sqrt(dx * dx + dy * dy);
+                let darken = Math.max(0, dist - 300) * 0.12;
+                data[i] = Math.min(255, Math.max(0, data[i] + noise - darken));
+                data[i+1] = Math.min(255, Math.max(0, data[i+1] + noise - darken * 0.9));
+                data[i+2] = Math.min(255, Math.max(0, data[i+2] + noise - darken * 0.8));
+            }
+            ctx.putImageData(imgData, 0, 0);
+            
+            for(let i=0; i<6; i++) {
+                ctx.fillStyle = `rgba(100, 70, 40, ${Math.random() * 0.08})`;
+                ctx.beginPath();
+                ctx.arc(Math.random() * texSize, Math.random() * texSize, 30 + Math.random() * 100, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            basePaperData = ctx.getImageData(0, 0, texSize, texSize);
+        }
+        generateBasePaper();
+
+        const paperTexture = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, paperTexture);
+        // SOLUCIÓN 2: Textura Invertida. Sin FLIP_Y engañosos. 
+        // Dibujamos de forma natural de (0,0) a (1,1) como en Canvas2D.
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+        function updateTexture() {
+            ctx.putImageData(basePaperData, 0, 0);
+
+            ctx.fillStyle = '#151515';
+            ctx.textBaseline = 'middle';
+            
+            // Header
+            ctx.textAlign = 'center';
+            ctx.font = 'bold 75px "Courier New", Courier, monospace';
+            ctx.fillText(platformState.title, texSize/2, 120);
+
+            ctx.textAlign = 'left';
+            ctx.font = 'bold 42px "Courier New", Courier, monospace';
+            ctx.fillText(platformState.caseStr, 120, 240);
+            ctx.fillText(platformState.dateStr, 120, 310);
+
+            ctx.setLineDash([12, 15]);
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(120, 360);
+            ctx.lineTo(texSize - 120, 360);
+            ctx.stroke();
+
+            // Cuerpo de Texto
+            ctx.textAlign = 'center';
+            ctx.font = 'italic 45px "Courier New", Courier, monospace';
+            let textStartY = 430;
+            
+            platformState.content.forEach((line, index) => {
+                ctx.fillText(line, texSize/2, textStartY + (index * 55));
+            });
+
+            let nextElementY = textStartY + (platformState.content.length * 55) + 30;
+
+            // SOLUCIÓN 3: Motor de Imagen robuso que nunca colapsa el Canvas
+            if (platformState.mediaElement) {
+                try {
+                    const m = platformState.mediaElement;
+                    const isVid = platformState.mediaType === 'video';
+                    // Extraer dimensiones seguras
+                    const mw = isVid ? m.videoWidth : (m.naturalWidth || m.width);
+                    const mh = isVid ? m.videoHeight : (m.naturalHeight || m.height);
+                    
+                    if (mw && mh && mw > 0 && mh > 0) {
+                        const maxW = 760;
+                        const maxH = 380; // Hard limit de altura para evitar invadir la firma
+                        
+                        let drawW = mw;
+                        let drawH = mh;
+                        
+                        // Ratio de aspecto mantenido
+                        if (drawW > maxW) {
+                            drawH = drawH * (maxW / drawW);
+                            drawW = maxW;
+                        }
+                        if (drawH > maxH) {
+                            drawW = drawW * (maxH / drawH);
+                            drawH = maxH;
+                        }
+
+                        const drawX = (texSize - drawW) / 2;
+                        
+                        // Polaroid
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fillRect(drawX - 10, nextElementY - 10, drawW + 20, drawH + 20); 
+                        ctx.drawImage(m, drawX, nextElementY, drawW, drawH);
+                        
+                        // Tinte Noir
+                        ctx.fillStyle = 'rgba(209, 192, 153, 0.15)'; 
+                        ctx.fillRect(drawX, nextElementY, drawW, drawH);
+                    }
+                } catch(e) { } // Fallback silencioso si el frame no está listo aún
+            }
+
+            // Firma anclada
+            ctx.fillStyle = '#151515';
+            ctx.textAlign = 'right';
+            ctx.font = 'bold 60px "Courier New", Courier, monospace';
+            ctx.fillText(platformState.signature, texSize - 120, texSize - 80);
+
+            gl.bindTexture(gl.TEXTURE_2D, paperTexture);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, ctxCanvas);
+            
+            platformState.needsTextureUpdate = false;
+        }
+
+        // --- SHADERS ---
+        const vsSource = `
+            attribute vec4 a_position;
+            attribute vec3 a_normal;
+            attribute vec2 a_texcoord;
+            uniform mat4 u_matrix;
+            varying vec3 v_normal;
+            varying vec2 v_texcoord;
+            varying vec3 v_surfaceToView;
+
+            void main() {
+                gl_Position = u_matrix * a_position;
+                v_normal = a_normal; 
+                v_texcoord = a_texcoord;
+                v_surfaceToView = vec3(0.0, 0.0, 4.2) - a_position.xyz; 
+            }
+        `;
+
+        const fsSource = `
+            precision mediump float;
+            varying vec3 v_normal;
+            varying vec2 v_texcoord;
+            varying vec3 v_surfaceToView;
+            uniform sampler2D u_texture;
+            uniform vec3 u_lightDirection;
+
+            void main() {
+                vec3 normal = normalize(v_normal);
+                vec3 surfaceToViewDirection = normalize(v_surfaceToView);
+                vec3 halfVector = normalize(u_lightDirection + surfaceToViewDirection);
+                
+                vec3 ambientLight = vec3(0.18, 0.12, 0.08);
+                vec3 lightColor = vec3(1.0, 0.9, 0.7);
+                
+                float diffuse = max(dot(normal, u_lightDirection), 0.0);
+                diffuse = pow(diffuse, 1.5) * 1.5; 
+
+                float specular = 0.0;
+                if (diffuse > 0.0) {
+                    specular = pow(max(dot(normal, halfVector), 0.0), 15.0) * 0.15;
+                }
+
+                vec4 texColor = texture2D(u_texture, v_texcoord);
+                vec3 finalColor = texColor.rgb * (ambientLight + (diffuse * lightColor)) + specular;
+                gl_FragColor = vec4(finalColor, texColor.a);
+            }
+        `;
+
+        function createShader(gl, type, source) {
+            const shader = gl.createShader(type);
+            gl.shaderSource(shader, source);
+            gl.compileShader(shader);
+            return shader;
+        }
+
+        const program = gl.createProgram();
+        gl.attachShader(program, createShader(gl, gl.VERTEX_SHADER, vsSource));
+        gl.attachShader(program, createShader(gl, gl.FRAGMENT_SHADER, fsSource));
+        gl.linkProgram(program);
+
+        const locs = {
+            position: gl.getAttribLocation(program, "a_position"),
+            normal: gl.getAttribLocation(program, "a_normal"),
+            texcoord: gl.getAttribLocation(program, "a_texcoord"),
+            matrix: gl.getUniformLocation(program, "u_matrix"),
+            texture: gl.getUniformLocation(program, "u_texture"),
+            lightDir: gl.getUniformLocation(program, "u_lightDirection")
+        };
+
+        // --- FÍSICAS VERLET ---
+        const cols = 30, rows = 40;
+        const numParticles = cols * rows;
+        const particles = new Array(numParticles);
+        const constraints = [];
+        const paperWidth = 2.4, paperHeight = 3.2;
+        const startX = -paperWidth / 2, startY = paperHeight / 2;
+        const spacingX = paperWidth / (cols - 1), spacingY = paperHeight / (rows - 1);
+
+        for (let y = 0; y < rows; y++) {
+            for (let x = 0; x < cols; x++) {
+                particles[y * cols + x] = {
+                    x: startX + x * spacingX, 
+                    y: startY - y * spacingY, 
+                    z: 0,
+                    oldX: startX + x * spacingX, 
+                    oldY: startY - y * spacingY, 
+                    oldZ: 0,
+                    pinned: y === 0,
+                    // UV Mapeo Natural
+                    u: x / (cols - 1), 
+                    v: y / (rows - 1) 
+                };
+            }
+        }
+
+        function addConstraint(p1, p2, stiffness) {
+            let dx = p1.x - p2.x, dy = p1.y - p2.y, dz = p1.z - p2.z;
+            constraints.push({p1, p2, restLength: Math.sqrt(dx*dx + dy*dy + dz*dz), stiffness});
+        }
+
+        for (let y = 0; y < rows; y++) {
+            for (let x = 0; x < cols; x++) {
+                let i = y * cols + x;
+                if (x < cols - 1) addConstraint(particles[i], particles[i + 1], 1.0);
+                if (y < rows - 1) addConstraint(particles[i], particles[i + cols], 1.0);
+                if (x < cols - 1 && y < rows - 1) {
+                    addConstraint(particles[i], particles[i + cols + 1], 1.0);
+                    addConstraint(particles[i + 1], particles[i + cols], 1.0);
+                }
+                if (x < cols - 2) addConstraint(particles[i], particles[i + 2], 0.5);
+                if (y < rows - 2) addConstraint(particles[i], particles[i + cols * 2], 0.5);
+            }
+        }
+
+        const indices = [];
+        for (let y = 0; y < rows - 1; y++) {
+            for (let x = 0; x < cols - 1; x++) {
+                let i = y * cols + x;
+                // CCW Winding order correcto para WebGL Front-Face
+                indices.push(i, i + cols, i + 1);
+                indices.push(i + 1, i + cols, i + cols + 1);
+            }
+        }
+
+        const posData = new Float32Array(numParticles * 3);
+        const normData = new Float32Array(numParticles * 3);
+        const vNormals = new Array(numParticles);
+        for(let i=0; i<numParticles; i++) vNormals[i] = {x:0, y:0, z:0};
+
+        const texcoordData = new Float32Array(numParticles * 2);
+        for(let i=0; i<numParticles; i++) {
+            texcoordData[i*2] = particles[i].u;
+            texcoordData[i*2+1] = particles[i].v;
+        }
+
+        const buffers = {
+            position: gl.createBuffer(),
+            normal: gl.createBuffer(),
+            texcoord: gl.createBuffer(),
+            index: gl.createBuffer()
+        };
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, buffers.texcoord);
+        gl.bufferData(gl.ARRAY_BUFFER, texcoordData, gl.STATIC_DRAW);
+
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffers.index);
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
+
+        let time = 0;
+        let grabbedParticle = null;
+        let mouseX = 0, mouseY = 0;
+        let fov = 45 * Math.PI / 180;
+        let cameraZ = 4.8;
+        let viewProjMatrix = new Float32Array(16);
+
+        function resize() {
+            canvas.width = canvasContainer.clientWidth || window.innerWidth;
+            canvas.height = canvasContainer.clientHeight || window.innerHeight;
+            if(canvas.width > 0 && canvas.height > 0) {
+                gl.viewport(0, 0, canvas.width, canvas.height);
+            }
+        }
+        window.addEventListener('resize', resize);
+        setTimeout(resize, 0);
+
+        function findClosestParticleToMouse(clientX, clientY) {
+            let closest = null;
+            let minDistSq = 2500; 
+            for (let p of particles) {
+                if (p.pinned) continue;
+                let screenPos = project3DTo2D(p.x, p.y, p.z, viewProjMatrix, canvas.width, canvas.height);
+                if (!screenPos) continue;
+                let dx = screenPos.x - clientX;
+                let dy = screenPos.y - clientY;
+                let distSq = dx*dx + dy*dy;
+                if (distSq < minDistSq) {
+                    minDistSq = distSq;
+                    closest = p;
+                }
+            }
+            return closest;
+        }
+
+        function handlePointerDown(e) {
+            const rect = canvasContainer.getBoundingClientRect();
+            mouseX = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+            mouseY = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+            
+            grabbedParticle = findClosestParticleToMouse(mouseX, mouseY);
+            if (grabbedParticle) {
+                cursorUI.classList.add('active');
+                cursorUI.style.left = mouseX + 'px';
+                cursorUI.style.top = mouseY + 'px';
+            }
+        }
+
+        function handlePointerMove(e) {
+            if (!grabbedParticle) return;
+            if(e.cancelable) e.preventDefault(); 
+            const rect = canvasContainer.getBoundingClientRect();
+            mouseX = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+            mouseY = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+        }
+
+        function handlePointerUp() {
+            grabbedParticle = null;
+            cursorUI.classList.remove('active');
+        }
+
+        canvasContainer.addEventListener('mousedown', handlePointerDown);
+        window.addEventListener('mousemove', handlePointerMove, {passive: false});
+        window.addEventListener('mouseup', handlePointerUp);
+        canvasContainer.addEventListener('touchstart', handlePointerDown, {passive: false});
+        window.addEventListener('touchmove', handlePointerMove, {passive: false});
+        window.addEventListener('touchend', handlePointerUp);
+
+        // --- LOOP PRINCIPAL ---
+        function render() {
+            if (canvas.height === 0 || canvas.width === 0) {
+                requestAnimationFrame(render);
+                return;
+            }
+
+            time += 0.016;
+
+            if (platformState.needsTextureUpdate || (platformState.mediaType === 'video' && hiddenVideo.readyState >= 2 && !hiddenVideo.paused)) {
+                updateTexture();
+            }
+
+            let aspect = canvas.width / canvas.height;
+            let projMatrix = m4.perspective(fov, aspect, 0.1, 100.0);
+            let viewMatrix = m4.translation(0, 0, -cameraZ);
+            viewProjMatrix = m4.multiply(projMatrix, viewMatrix);
+
+            const drag = 0.92;
+            const gravity = -0.008;
+
+            for (let p of particles) {
+                if (p.pinned) continue;
+                let wind = Math.sin(time * 2.0 + p.x * 3.0 + p.y) * 0.00015;
+                p.z += wind;
+                let vx = (p.x - p.oldX) * drag;
+                let vy = (p.y - p.oldY) * drag;
+                let vz = (p.z - p.oldZ) * drag;
+                p.oldX = p.x; p.oldY = p.y; p.oldZ = p.z;
+                p.x += vx; p.y += vy + gravity; p.z += vz;
+                if(p.z > 2.5) p.z = 2.5; 
+            }
+
+            if (grabbedParticle) {
+                let ndcX = (mouseX / canvas.width * 2 - 1);
+                let dx = (ndcX * aspect * (cameraZ * Math.tan(fov/2)));
+                let dy = -(mouseY / canvas.height * 2 - 1) * 2.5;
+                
+                grabbedParticle.x += (dx - grabbedParticle.x) * 0.2;
+                grabbedParticle.y += (dy - grabbedParticle.y) * 0.2;
+                grabbedParticle.z += (1.2 - grabbedParticle.z) * 0.2; 
+            }
+
+            const iterations = 35; 
+            for (let i = 0; i < iterations; i++) {
+                for (let c of constraints) {
+                    let dx = c.p1.x - c.p2.x;
+                    let dy = c.p1.y - c.p2.y;
+                    let dz = c.p1.z - c.p2.z;
+                    let dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+                    if (dist === 0) continue;
+                    let diff = ((dist - c.restLength) / dist) * 0.5 * c.stiffness;
+                    let ox = dx * diff, oy = dy * diff, oz = dz * diff;
+                    if (!c.p1.pinned && c.p1 !== grabbedParticle) {
+                        c.p1.x -= ox; c.p1.y -= oy; c.p1.z -= oz;
+                    }
+                    if (!c.p2.pinned && c.p2 !== grabbedParticle) {
+                        c.p2.x += ox; c.p2.y += oy; c.p2.z += oz;
+                    }
+                }
+                for(let x=0; x<cols; x++) {
+                    particles[x].x = startX + x * spacingX;
+                    particles[x].y = startY;
+                    particles[x].z = 0;
+                }
+            }
+
+            for(let i=0; i<numParticles; i++) {
+                vNormals[i].x = 0; vNormals[i].y = 0; vNormals[i].z = 0;
+            }
+
+            for (let i = 0; i < indices.length; i += 3) {
+                let i0 = indices[i], i1 = indices[i+1], i2 = indices[i+2];
+                let p0 = particles[i0], p1 = particles[i1], p2 = particles[i2];
+                let ux = p1.x - p0.x, uy = p1.y - p0.y, uz = p1.z - p0.z;
+                let vx = p2.x - p0.x, vy = p2.y - p0.y, vz = p2.z - p0.z;
+                let nx = uy * vz - uz * vy;
+                let ny = uz * vx - ux * vz;
+                let nz = ux * vy - uy * vx;
+                vNormals[i0].x += nx; vNormals[i0].y += ny; vNormals[i0].z += nz;
+                vNormals[i1].x += nx; vNormals[i1].y += ny; vNormals[i1].z += nz;
+                vNormals[i2].x += nx; vNormals[i2].y += ny; vNormals[i2].z += nz;
+            }
+
+            for (let i = 0; i < numParticles; i++) {
+                let p = particles[i];
+                posData[i*3] = p.x; posData[i*3+1] = p.y; posData[i*3+2] = p.z;
+                let n = vNormals[i];
+                let len = Math.sqrt(n.x*n.x + n.y*n.y + n.z*n.z);
+                if (len > 0.0001) {
+                    normData[i*3] = n.x/len; normData[i*3+1] = n.y/len; normData[i*3+2] = n.z/len;
+                } else {
+                    normData[i*3] = 0; normData[i*3+1] = 0; normData[i*3+2] = 1;
+                }
+            }
+
+            gl.bindBuffer(gl.ARRAY_BUFFER, buffers.position);
+            gl.bufferData(gl.ARRAY_BUFFER, posData, gl.DYNAMIC_DRAW);
+            gl.bindBuffer(gl.ARRAY_BUFFER, buffers.normal);
+            gl.bufferData(gl.ARRAY_BUFFER, normData, gl.DYNAMIC_DRAW);
+
+            gl.clearColor(0,0,0,0);
+            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+            gl.enable(gl.DEPTH_TEST);
+            gl.disable(gl.CULL_FACE); 
+
+            gl.useProgram(program);
+            gl.uniformMatrix4fv(locs.matrix, false, viewProjMatrix);
+            
+            let lightDirX = 0.5; let lightDirY = 0.8; let lightDirZ = 1.0;
+            let ldLen = Math.sqrt(lightDirX*lightDirX + lightDirY*lightDirY + lightDirZ*lightDirZ);
+            gl.uniform3f(locs.lightDir, lightDirX/ldLen, lightDirY/ldLen, lightDirZ/ldLen);
+
+            gl.bindBuffer(gl.ARRAY_BUFFER, buffers.position);
+            gl.enableVertexAttribArray(locs.position);
+            gl.vertexAttribPointer(locs.position, 3, gl.FLOAT, false, 0, 0);
+
+            gl.bindBuffer(gl.ARRAY_BUFFER, buffers.normal);
+            gl.enableVertexAttribArray(locs.normal);
+            gl.vertexAttribPointer(locs.normal, 3, gl.FLOAT, false, 0, 0);
+
+            gl.bindBuffer(gl.ARRAY_BUFFER, buffers.texcoord);
+            gl.enableVertexAttribArray(locs.texcoord);
+            gl.vertexAttribPointer(locs.texcoord, 2, gl.FLOAT, false, 0, 0);
+
+            gl.activeTexture(gl.TEXTURE0);
+            gl.bindTexture(gl.TEXTURE_2D, paperTexture);
+            gl.uniform1i(locs.texture, 0);
+
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffers.index);
+            gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
+
+            if (grabbedParticle) {
+                let screenPos = project3DTo2D(grabbedParticle.x, grabbedParticle.y, grabbedParticle.z, viewProjMatrix, canvas.width, canvas.height);
+                if (screenPos) {
+                    cursorUI.style.left = screenPos.x + 'px';
+                    cursorUI.style.top = screenPos.y + 'px';
+                }
+            }
+
+            if (platformState.exportNextFrame) {
+                const url = canvas.toDataURL("image/png");
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = "EVIDENCE_" + Date.now() + ".png";
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                platformState.exportNextFrame = false;
+            }
+
+            requestAnimationFrame(render);
+        }
+
+        updateTexture();
+        render();
+    </script>
+</body>
+</html>
