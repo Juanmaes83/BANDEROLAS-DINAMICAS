@@ -8,6 +8,7 @@
       this.context = null;
       this.texture = null;
       this.format = null;
+      this.variant = null;
     }
 
     register(id, adapter){
@@ -47,6 +48,11 @@
       return nextId;
     }
 
+    setVariant(variant, context = this.context || {}){
+      this.variant = variant || null;
+      if(this.active && typeof this.active.setVariant === 'function') this.active.setVariant(this.variant, context);
+    }
+
     setTexture(texture, context = this.context || {}){
       this.texture = texture;
       if(this.active && typeof this.active.setTexture === 'function') this.active.setTexture(texture, context);
@@ -73,6 +79,7 @@
       const normalized = window.BanderolasSurfaceSchema.normalize(surface);
       const activeId = this.use(normalized.engine, context);
       normalized.engine = activeId;
+      this.setVariant(normalized.variant, context);
       this.setFormat(context.state?.format || this.format, context);
       this.setTexture(context.texture || this.texture, context);
       this.setMaterial(normalized.material, context);
@@ -84,6 +91,7 @@
     diagnostics(){
       return {
         activeId: this.activeId,
+        variant: this.variant,
         registered: [...this.registry.keys()],
         engines: this.list(),
         hasTexture: !!this.texture,
