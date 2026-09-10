@@ -5,6 +5,9 @@
   const foundation=window.BanderolasSurfaceFoundation;
   if(!schema || !manager || !foundation) throw new Error('Paper Studio load order invalid');
 
+  const VARIANT_LABELS=Object.freeze({
+    original:'Original', japanese:'Japanese', certificate:'Certificate', 'site-of-the-year':'Site of the Year'
+  });
   const MATERIAL_PRESETS=Object.freeze({
     native:{label:'Native / Variant authored'},
     opaque:{label:'Opaque Paper',values:{opacity:1,transparency:0,translucency:0,roughness:.34,reflection:.25,depth:.55,clearcoat:.34,iridescence:0,ior:1.5,specular:.55,backlight:0,perspective:.5,lightIntensity:1,lightX:0,lightY:0}},
@@ -63,6 +66,16 @@
     manager.setMotion(state.surface.motion,ctx());
     disarmHistory(); syncUI();
   }
+  function changeVariant(next){
+    if(state.surface?.engine!=='paper3d' || !VARIANT_LABELS[next]) return;
+    armHistory();
+    const wasNative=state.surface.material?.preset==='native';
+    state.surface={...state.surface,variant:next};
+    if(wasNative) state.surface.material=nativeMaterial(next);
+    state.surface=schema.normalize(state.surface);
+    state.surface=manager.sync(state.surface,ctx());
+    disarmHistory(); syncUI();
+  }
 
   function setMaterialValue(key,value){
     if(state.surface?.engine!=='paper3d') return;
@@ -119,11 +132,26 @@
     sens.onpointerdown=armHistory; sens.oninput=e=>setSensitivity(e.target.value); sens.onchange=disarmHistory;
   }
 
+  function ensureVariantUI(){
+    const select=document.querySelector('#surface-variant'); if(!select) return;
+    const active=state.surface?.engine==='paper3d';
+    if(!active){ select.disabled=true; return; }
+    const signature=[...select.options].map(o=>o.value).join('|');
+    const wanted=Object.keys(VARIANT_LABELS).join('|');
+    if(signature!==wanted){
+      select.innerHTML=Object.entries(VARIANT_LABELS).map(([value,label])=>`<option value="${value}">${label}</option>`).join('');
+    }
+    select.disabled=false;
+    select.value=state.surface.variant||'original';
+  }
+
   function syncUI(full=true){
     const studio=document.querySelector('#paper3d-studio'); if(!studio) return;
-    const active=state.surface?.engine==='paper3d'; studio.style.display=active?'block':'none';
+    const active=state.surface?.engine==='paper3d';
+    ensureVariantUI(); studio.style.display=active?'block':'none';
     if(!active) return;
     state.surface=schema.normalize(state.surface);
+    ensureVariantUI();
     const m=state.surface.material, mo=state.surface.motion;
     const mp=document.querySelector('#paper-material-preset');
     const mop=document.querySelector('#paper-motion-preset');
@@ -145,10 +173,18 @@
     if(status) status.textContent=`${String(state.surface.variant||'original').toUpperCase()} · ${String(m.preset||'native').toUpperCase()} · ${String(mo.profile||'native').toUpperCase()} · LIVE`;
   }
 
-  document.querySelector('#surface-engine')?.addEventListener('change',()=>setTimeout(()=>syncUI(),0));
-  document.querySelector('#surface-variant')?.addEventListener('change',()=>setTimeout(()=>syncUI(),0));
+  const engineSelect=document.querySelector('#surface-engine');
+  const variantSelect=document.querySelector('#surface-variant');
+  engineSelect?.addEventListener('change',()=>setTimeout(()=>syncUI(),0));
+  variantSelect?.addEventListener('change',e=>changeVariant(e.target.value));
+  if(variantSelect){
+    const observer=new MutationObserver(()=>{
+      if(state.surface?.engine==='paper3d') queueMicrotask(()=>syncUI());
+    });
+    observer.observe(variantSelect,{childList:true});
+  }
   window.addEventListener('focus',()=>syncUI());
 
-  window.BanderolasPaperStudio=Object.freeze({syncUI,applyMaterialPreset,applyMotionPreset,MATERIAL_PRESETS,MOTION_PRESETS});
+  window.BanderolasPaperStudio=Object.freeze({syncUI,changeVariant,applyMaterialPreset,applyMotionPreset,MATERIAL_PRESETS,MOTION_PRESETS,VARIANT_LABELS});
   syncUI();
 })();
