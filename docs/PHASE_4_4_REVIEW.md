@@ -26,8 +26,8 @@ Además se elimina únicamente el `<h1>` demo del fondo DOM. Se conservan las ca
 
 Dentro de `Surface / 3D → Paper Studio` aparecen tres modos:
 
-- `Native + Content` — recomendado. Conserva el artwork nativo y superpone las capas BANDEROLAS sobre toda la superficie.
-- `Native Safe Layout` — conserva el artwork nativo y coloca el contenido BANDEROLAS dentro de un área segura configurable para respetar bordes/ornamentos.
+- `Native Safe Layout` — **recomendado y valor por defecto**. Conserva el artwork nativo y coloca el contenido BANDEROLAS dentro de un área segura configurable para que incluso una imagen/vídeo marcado como Full Bleed no tape automáticamente todos los bordes y ornamentos del original.
+- `Native + Content` — overlay libre. Conserva el artwork nativo y superpone las capas BANDEROLAS según sus posiciones originales; útil para logo/texto/medias parciales.
 - `Full Bleed · replace artwork` — mantiene el comportamiento 4.3: reemplaza visualmente el artwork por la creatividad BANDEROLAS a sangre, conservando geometría/material/motion del Paper.
 
 Controles añadidos:
@@ -41,7 +41,7 @@ Controles añadidos:
 
 En modo Native se restauran exactamente los valores capturados de la variante cargada: color, roughness, clearcoat, clearcoat roughness, envMap intensity, specular, iridescence, IOR, alphaTest, transmission/thickness cuando existen, sheen, uniforms de bend/rim, FOV, luces y posiciones base.
 
-Los presets custom continúan disponibles como `Advanced Override`; solo entonces BANDEROLAS modifica esos parámetros.
+Los presets custom continúan disponibles como Advanced Override; solo entonces BANDEROLAS modifica esos parámetros.
 
 `Motion preset → Native ThreeUI` mantiene igualmente el comportamiento ThreeUI original. Los perfiles custom solo actúan cuando el usuario los selecciona.
 
@@ -62,7 +62,7 @@ Nuevo archivo:
 
 Este módulo crea un canvas interno transparente, no un segundo editor visible. Reutiliza el mismo `state.elements`, `runtimeAssets`, posiciones, crop, zoom, fit, opacidad, rotación, tipografía, auto-fit, letter spacing y orden de capas.
 
-El adapter Paper sigue enviando `ImageBitmap` al iframe. Para `Native + Content` y `Native Safe Layout` envía el canvas transparente; para `Full Bleed` usa el `texCanvas` completo existente.
+El adapter Paper sigue enviando `ImageBitmap` al iframe. Para `Native Safe Layout` y `Native + Content` envía el canvas transparente; para `Full Bleed` usa el `texCanvas` completo existente.
 
 ## Estado / persistencia
 
@@ -71,7 +71,7 @@ El adapter Paper sigue enviando `ImageBitmap` al iframe. Para `Native + Content`
 ```json
 {
   "content": {
-    "mode": "native-content",
+    "mode": "native-layout",
     "opacity": 1,
     "safeInset": 0.08
   }
@@ -101,7 +101,7 @@ Usar exactamente la misma creatividad en las cuatro variantes.
 
 Primero seleccionar:
 
-- `Content Mode → Native + Content`
+- `Content Mode → Native Safe Layout · recommended`
 - `Material → Native / EXACT ThreeUI · no overrides`
 - `Motion → Native ThreeUI`
 
@@ -114,7 +114,7 @@ Luego comparar:
 
 El criterio de aprobación es que las diferencias procedan del diseño/material/atmósfera original de cada source, no de presets inventados por BANDEROLAS.
 
-Después probar `Native Safe Layout` con un logo, headline e imagen/vídeo y comprobar que respeta mejor los ornamentos. Finalmente probar `Full Bleed` para confirmar que el modo 4.3 continúa disponible.
+Después probar `Native + Content` para overlay libre y `Full Bleed` para confirmar que el modo 4.3 continúa disponible.
 
 Volver a `Classic Fabric` y comprobar grab → stretch → release sin regresión.
 
