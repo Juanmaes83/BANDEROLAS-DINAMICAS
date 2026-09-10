@@ -1,0 +1,31 @@
+name: Phase 4.3 Verify
+
+on:
+  push:
+    branches:
+      - feat/phase4-2-threeui-paper-original
+    paths:
+      - index.html
+      - src/surfaces/paper3d-runtime-bridge.js
+      - src/surfaces/paper3d-adapter.js
+      - scripts/verify-phase4-3.mjs
+      - vendor/threeui/3d-paper/**
+      - .github/workflows/phase4-3-verify.yml
+
+permissions:
+  contents: read
+
+jobs:
+  verify-paper-live-content:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+
+      - name: Check adapter and bridge syntax
+        run: |
+          node --check src/surfaces/paper3d-runtime-bridge.js
+          node --check src/surfaces/paper3d-adapter.js
+
+      - name: Verify exact vendor + live CanvasTexture bridge contract
+        run: node scripts/verify-phase4-3.mjs

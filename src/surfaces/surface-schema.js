@@ -1,6 +1,6 @@
 'use strict';
 (() => {
-  const VERSION = 1;
+  const VERSION = 2;
   const DEFAULT_SURFACE = Object.freeze({
     schemaVersion: VERSION,
     engine: 'classic',
@@ -28,7 +28,7 @@
 
   const FEATURE_FLAGS = Object.freeze({
     classic: true,
-    paper3d: false,
+    paper3d: true,
     woven: false
   });
 
@@ -41,11 +41,12 @@
     const src = input && typeof input === 'object' ? input : {};
     const requestedEngine = typeof src.engine === 'string' ? src.engine : base.engine;
     const engine = FEATURE_FLAGS[requestedEngine] ? requestedEngine : 'classic';
+    const defaultVariant = engine === 'paper3d' ? 'original' : 'default';
 
     return {
       schemaVersion: VERSION,
       engine,
-      variant: typeof src.variant === 'string' && src.variant ? src.variant : 'default',
+      variant: typeof src.variant === 'string' && src.variant ? src.variant : defaultVariant,
       material: {
         ...base.material,
         ...(src.material || {}),

@@ -1,0 +1,38 @@
+name: Phase 4.2 Vendor ThreeUI 3D Paper
+
+on:
+  push:
+    branches:
+      - feat/phase4-2-threeui-paper-original
+    paths:
+      - scripts/vendor-threeui-3d-paper.mjs
+      - .github/workflows/phase4-2-vendor-threeui.yml
+
+permissions:
+  contents: write
+
+jobs:
+  vendor-source:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact branch
+        uses: actions/checkout@v4
+        with:
+          ref: feat/phase4-2-threeui-paper-original
+          fetch-depth: 0
+
+      - name: Fetch, verify SHA-256, and vendor exact ThreeUI source
+        run: node scripts/vendor-threeui-3d-paper.mjs
+
+      - name: Commit verified vendor source
+        shell: bash
+        run: |
+          if [ -z "$(git status --porcelain -- vendor/threeui/3d-paper)" ]; then
+            echo "Vendor source already exact; no commit required."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add vendor/threeui/3d-paper
+          git commit -m "vendor(4.2): lock verified ThreeUI 3D Paper exact source"
+          git push origin HEAD:feat/phase4-2-threeui-paper-original

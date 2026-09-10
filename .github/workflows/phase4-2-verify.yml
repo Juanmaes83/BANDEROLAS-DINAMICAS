@@ -1,0 +1,26 @@
+name: Phase 4.2 Verify
+
+on:
+  push:
+    branches:
+      - feat/phase4-2-threeui-paper-original
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: JavaScript syntax
+        run: |
+          node --check src/surfaces/surface-schema.js
+          node --check src/surfaces/surface-manager.js
+          node --check src/surfaces/classic-fabric-adapter.js
+          node --check src/surfaces/paper3d-adapter.js
+      - name: Source lock and adapter contract
+        run: node scripts/verify-phase4-2.mjs
