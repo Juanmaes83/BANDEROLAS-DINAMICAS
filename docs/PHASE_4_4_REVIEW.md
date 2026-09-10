@@ -1,140 +1,123 @@
-# PHASE 4.4 REVIEW — PAPER STUDIO
+# PHASE 4.4R REVIEW — PAPER STUDIO · NATIVE FIDELITY
 
-## Objetivo
+## Motivo de la revisión
 
-Convertir el motor `3D Paper` ya integrado en una superficie configurable de producción, manteniendo el mismo editor, el mismo compositor BANDEROLAS y el motor Classic Fabric protegido.
+La primera implementación 4.4 pasó los gates estructurales pero falló el gate visual humano: las cuatro variantes existían, pero al sustituir completamente `makeCertTexture()` por el CanvasTexture de BANDEROLAS se eliminaba gran parte del diseño que hacía reconocibles a Original, Japanese, Certificate y Site of the Year.
 
-## Implementado
+La corrección 4.4R cambia el criterio: **ThreeUI manda sobre el diseño físico y BANDEROLAS sustituye/añade contenido sin destruir el shell nativo**.
 
-### 1. Cuatro variantes ThreeUI exactas
+## Principio de integración
 
-El selector `Surface / 3D → Variant` permite:
+Los archivos bajo `vendor/threeui/3d-paper/` siguen byte-for-byte inmutables y verificados por SHA-256.
+
+En la runtime derivada:
+
+1. `makeCertTexture()` original NO se reemplaza.
+2. Se ejecuta exactamente la función nativa de cada variante.
+3. Durante esa ejecución se interceptan temporalmente `fillText` y `strokeText` para suprimir solo el copy demo.
+4. Se conserva todo el contenido no textual del canvas original: fondos, formas, marcos, ornamentos, gradientes, sellos gráficos, texturas y demás artwork.
+5. Se captura ese resultado como `nativeBase`.
+6. La composición BANDEROLAS se renderiza aparte sobre un canvas transparente.
+7. Ese canvas se compone por encima de `nativeBase` y sigue admitiendo imagen, vídeo LIVE, logo y texto.
+
+Además se elimina únicamente el `<h1>` demo del fondo DOM. Se conservan las capas de ambiente originales como DOF, grain, vignette, colores, luces y estructura de la variante.
+
+## Modos de contenido
+
+Dentro de `Surface / 3D → Paper Studio` aparecen tres modos:
+
+- `Native + Content` — recomendado. Conserva el artwork nativo y superpone las capas BANDEROLAS sobre toda la superficie.
+- `Native Safe Layout` — conserva el artwork nativo y coloca el contenido BANDEROLAS dentro de un área segura configurable para respetar bordes/ornamentos.
+- `Full Bleed · replace artwork` — mantiene el comportamiento 4.3: reemplaza visualmente el artwork por la creatividad BANDEROLAS a sangre, conservando geometría/material/motion del Paper.
+
+Controles añadidos:
+
+- Content opacity.
+- Native safe inset.
+
+## Material Native ahora es realmente Native
+
+`Material preset → Native / EXACT ThreeUI · no overrides` ya no intenta recrear el aspecto nativo mediante nuestros sliders.
+
+En modo Native se restauran exactamente los valores capturados de la variante cargada: color, roughness, clearcoat, clearcoat roughness, envMap intensity, specular, iridescence, IOR, alphaTest, transmission/thickness cuando existen, sheen, uniforms de bend/rim, FOV, luces y posiciones base.
+
+Los presets custom continúan disponibles como `Advanced Override`; solo entonces BANDEROLAS modifica esos parámetros.
+
+`Motion preset → Native ThreeUI` mantiene igualmente el comportamiento ThreeUI original. Los perfiles custom solo actúan cuando el usuario los selecciona.
+
+## Cuatro variantes exactas
 
 - `Original`
 - `Japanese`
 - `Certificate`
 - `Site of the Year`
 
-Cada variante se carga desde su archivo exacto vendorizado y se valida en runtime contra `SOURCE_LOCK.json` antes de montarse. No se modifica ningún archivo bajo `vendor/threeui/3d-paper/`.
+Cada una se sigue cargando desde su HTML exacto y se verifica contra `SOURCE_LOCK.json` antes de montar la runtime.
 
-### 2. Paper Studio dentro del mismo panel
+## Compositor BANDEROLAS transparente
 
-Se añade una única sección compacta dentro de `Surface / 3D`. No existe un segundo editor, panel ni canvas de composición.
+Nuevo archivo:
 
-Presets de material:
+- `src/surfaces/paper3d-native-fidelity.js`
 
-- Native / Variant authored
-- Opaque Paper
-- Transparent Sheet
-- Translucent / Backlit
-- Glass Paper
-- Soft Washi
-- Iridescent Film
+Este módulo crea un canvas interno transparente, no un segundo editor visible. Reutiliza el mismo `state.elements`, `runtimeAssets`, posiciones, crop, zoom, fit, opacidad, rotación, tipografía, auto-fit, letter spacing y orden de capas.
 
-Controles de material en vivo:
+El adapter Paper sigue enviando `ImageBitmap` al iframe. Para `Native + Content` y `Native Safe Layout` envía el canvas transparente; para `Full Bleed` usa el `texCanvas` completo existente.
 
-- opacity
-- transparency
-- translucency
-- backlight
-- roughness
-- reflection
-- clearcoat
-- iridescence
-- 3D depth
-- perspective
-- light intensity
-- light X / Y
+## Estado / persistencia
 
-Presets de motion:
+`state.surface` pasa a schema v4 y añade:
 
-- Native ThreeUI
-- Calm
-- Float
-- Tilt / Hover
-- Inertial Spin
-- Dynamic
+```json
+{
+  "content": {
+    "mode": "native-content",
+    "opacity": 1,
+    "safeInset": 0.08
+  }
+}
+```
 
-Controles de motion/interacción:
+Se conserva dentro del mismo flujo Save / autosave / history / JSON / import.
 
-- motion intensity
-- idle motion
-- inertia
-- pointer tilt
-- float
-- pointer sensitivity
+## Gate automático 4.4R
 
-### 3. Runtime derivada, vendor inmutable
+`Phase 4.4 Verify` comprueba ahora:
 
-`src/surfaces/paper3d-runtime-bridge.js` crea una runtime derivada en memoria. Sobre esa runtime se conectan:
+1. 4/4 hashes exactos y SOURCE_LOCK.
+2. Ningún vendor contiene código BANDEROLAS.
+3. La runtime conserva `makeCertTexture()` original y lo envuelve en vez de sustituirlo.
+4. Solo se suprime texto demo durante el render nativo.
+5. Existe `nativeBase` y se reutiliza para composición.
+6. Existen los tres modos `native-content`, `native-layout`, `full-bleed`.
+7. Native Material dispone de bypass/restauración exacta.
+8. Canvas BANDEROLAS transparente cargado en producción.
+9. Schema v4 activo.
+10. Classic Fabric sigue fuera de esta modificación.
 
-- CanvasTexture viva de BANDEROLAS;
-- parámetros de material;
-- parámetros de motion;
-- interacción/pointer sensitivity;
-- cámara/perspectiva;
-- iluminación.
+## Gate visual humano — obligatorio
 
-La geometría, shaders y estructura base ThreeUI continúan procediendo del source exacto.
+Usar exactamente la misma creatividad en las cuatro variantes.
 
-### 4. Persistencia
+Primero seleccionar:
 
-`state.surface` pasa a schema v3. La variante, material, motion e interacción forman parte del estado serializable del proyecto y siguen el mismo flujo existente de Save / JSON / Import / history.
+- `Content Mode → Native + Content`
+- `Material → Native / EXACT ThreeUI · no overrides`
+- `Motion → Native ThreeUI`
 
-Los proyectos Paper creados con schema anterior se migran al baseline nativo de Paper para no heredar por error parámetros visuales de Classic Fabric.
+Luego comparar:
 
-## Archivos principales
+1. Original
+2. Japanese
+3. Certificate
+4. Site of the Year
 
-- `src/surfaces/surface-schema.js`
-- `src/surfaces/paper3d-runtime-bridge.js`
-- `src/surfaces/paper3d-adapter.js`
-- `src/surfaces/paper3d-studio.js`
-- `scripts/verify-phase4-4.mjs`
-- `.github/workflows/phase4-4-verify.yml`
+El criterio de aprobación es que las diferencias procedan del diseño/material/atmósfera original de cada source, no de presets inventados por BANDEROLAS.
 
-## Gate automático
+Después probar `Native Safe Layout` con un logo, headline e imagen/vídeo y comprobar que respeta mejor los ornamentos. Finalmente probar `Full Bleed` para confirmar que el modo 4.3 continúa disponible.
 
-`Phase 4.4 Verify` comprueba:
+Volver a `Classic Fabric` y comprobar grab → stretch → release sin regresión.
 
-1. sintaxis JS;
-2. SHA-256 exacto de las cuatro variantes;
-3. coincidencia con `SOURCE_LOCK.json`;
-4. ausencia de código BANDEROLAS dentro del vendor;
-5. que las cuatro fuentes exactas pueden transformarse por el bridge sin romper los markers necesarios;
-6. live texture bridge;
-7. live material/motion bridge;
-8. selector de cuatro variantes;
-9. presets de material y motion;
-10. carga de `paper3d-studio.js` en producción.
+## Estado de merge
 
-## Gate visual humano
-
-Usar una sola creatividad: `vídeo Full Bleed + logo + headline + CTA`.
-
-Secuencia de revisión:
-
-1. comprobar `Classic Fabric` y su grab/stretch;
-2. cambiar a `3D Paper`;
-3. comprobar `Original` con contenido BANDEROLAS vivo;
-4. cambiar a `Japanese` sin perder capas ni vídeo;
-5. cambiar a `Certificate`;
-6. cambiar a `Site of the Year`;
-7. probar `Transparent Sheet`;
-8. probar `Translucent / Backlit`;
-9. probar `Glass Paper`;
-10. probar `Soft Washi`;
-11. probar `Iridescent Film`;
-12. probar `Float`, `Tilt / Hover`, `Inertial Spin` y `Dynamic`;
-13. mover sliders de Reflection, Depth, Perspective, Light y Pointer sensitivity;
-14. volver a `Classic Fabric` y confirmar que la física original sigue intacta;
-15. volver a Paper y comprobar que la creatividad continúa intacta.
-
-## Criterio de aprobado
-
-La misma creatividad debe cambiar entre las cuatro variantes sin reconstruirse, el vídeo debe seguir vivo y los cambios de material/motion deben ser visibles en tiempo real. Classic Fabric no puede sufrir regresión.
-
-## Límites deliberados
-
-- Woven Cloth no entra en 4.4; corresponde a 4.5.
-- La paridad completa de Interactive/Share/Embed para Paper corresponde a 4.6.
-- La edición directa de capas sobre la superficie 3D sigue fuera de este gate; la composición se edita desde el mismo panel actual.
+PR #4 continúa Draft hasta aprobación visual humana de esta corrección. No se mergea por pasar CI si las variantes no son claramente más fieles a sus originales.
