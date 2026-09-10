@@ -50,26 +50,57 @@ La grabación usa `canvas.captureStream(60)` + `MediaRecorder`. Si el navegador 
 
 El motor Classic Fabric / Verlet validado queda protegido. Nuevas funciones no deben sustituirlo de forma destructiva. Los nuevos motores se integran mediante una capa `Surface Engine Manager`, se validan de forma aislada y deben poder activarse/desactivarse sin alterar capas, proyectos, assets, exportación ni el motor Classic.
 
-## Nueva fase — Dynamic 3D Surface Engines
+## Fase 4 — Dynamic 3D Surface Engines
 
-La siguiente evolución convierte BANDEROLAS PRO en un editor multimotor de superficies dinámicas 3D manteniendo el mismo panel y el mismo compositor. Objetivo inicial:
+BANDEROLAS PRO ya dispone de la base multimotor y de `3D Paper` conectado al compositor BANDEROLAS mediante CanvasTexture viva.
+
+Arquitectura actual:
 
 - `Classic Fabric` — motor WebGL/Verlet actual, protegido.
-- `3D Paper` — fuente exacta ThreeUI, con variantes Original, Japanese, Certificate y Site of the Year.
-- `Woven Cloth` — fuente exacta ThreeUI/Neuform, con variantes Woven, Iridescent, Atelier y Washi.
-- Transparencia, translucencia, reflexión, profundidad y backlight cuando el motor lo soporte.
-- Nuevos movimientos: float, tilt, inertial spin, wind/wave y combinaciones controladas.
-- El mismo contenido de BANDEROLAS PRO debe poder cambiar de motor sin reconstruir la creatividad.
-- Todas las salidas existentes (PNG, vídeo, MP4, JSON, Interactive, ZIP, Share e iframe) deben conservar el motor y sus parámetros.
+- `3D Paper` — fuente exacta ThreeUI vendorizada y verificada por SHA-256.
+- `Surface Engine Manager` — cambio reversible entre motores sin reconstruir la creatividad.
+- `Paper Studio` — variantes Original, Japanese, Certificate y Site of the Year con controles en vivo de material, profundidad, iluminación, motion e interacción.
+- `Woven Cloth` — siguiente motor objetivo; todavía bloqueado hasta source-lock exacto.
+
+### Paper Studio 4.4
+
+Presets de material:
+
+- Native / Variant authored
+- Opaque Paper
+- Transparent Sheet
+- Translucent / Backlit
+- Glass Paper
+- Soft Washi
+- Iridescent Film
+
+Presets de movimiento:
+
+- Native ThreeUI
+- Calm
+- Float
+- Tilt / Hover
+- Inertial Spin
+- Dynamic
+
+Los controles de transparencia, translucencia, backlight, roughness, reflection, clearcoat, iridescence, profundidad, perspectiva, luz, intensidad, idle, inertia, tilt, float y sensibilidad del pointer se guardan dentro de `state.surface` schema v3.
 
 Documentación de esta fase:
 
 - `docs/ROADMAP_PHASE_4_DYNAMIC_SURFACES.md`
 - `docs/THREEUI_INTEGRATION_SPEC.md`
+- `docs/PHASE_4_2_REVIEW.md`
+- `docs/PHASE_4_3_REVIEW.md`
+- `docs/PHASE_4_4_REVIEW.md`
 
 ## Estado
 
 Fase 1: ✅ cerrada y mergeada a `main`.  
 Fase 2: ✅ cerrada y mergeada a `main`.  
 Fase 3: ✅ cerrada y mergeada a `main`.  
-Fase 4 — Dynamic 3D Surface Engines: 🟡 documentación y roadmap abiertos en `feat/dynamic-3d-surface-engines`; implementación pendiente de aprobación por subfase.
+Fase 4.1 — Surface Engine Foundation: ✅ mergeada.  
+Fase 4.2 — ThreeUI Source Lock + 3D Paper Original: ✅ mergeada.  
+Fase 4.3 — Dynamic CanvasTexture Adapter: ✅ mergeada.  
+Fase 4.4 — Paper Studio variants + premium controls: 🟡 implementada en rama y pendiente de gate visual humano.  
+Fase 4.5 — Woven Cloth: ⏳ pendiente.  
+Fase 4.6 — Export / Interactive / Share parity: ⏳ pendiente.
