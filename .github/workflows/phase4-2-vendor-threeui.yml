@@ -27,7 +27,7 @@ jobs:
       - name: Commit verified vendor source
         shell: bash
         run: |
-          if git diff --quiet -- vendor/threeui/3d-paper && [ -d vendor/threeui/3d-paper ]; then
+          if [ -z "$(git status --porcelain -- vendor/threeui/3d-paper)" ]; then
             echo "Vendor source already exact; no commit required."
             exit 0
           fi
