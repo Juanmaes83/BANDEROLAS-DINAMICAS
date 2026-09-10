@@ -62,14 +62,16 @@
   function status(t,k=''){const n=$('#restaurant-menu-status');if(n){n.textContent=t;n.className='status'+(k?` ${k}`:'');}}
   async function apply(){
     if(typeof state==='undefined')throw new Error('Editor state unavailable');const b=$('#apply-restaurant-menu-premium');if(b){b.disabled=true;b.textContent='LOADING MENU…';}status('Preparando carta premium y assets gastronómicos…');
+    const modeBefore=state.mode;
+    const formatBefore=state.format;
     try{
       if(typeof pushHistory==='function')pushHistory();const backdrop=`builtin:${PRESET_ID}:backdrop`,logo=`builtin:${PRESET_ID}:logo`;
       if(!(typeof runtimeAssets!=='undefined'&&runtimeAssets.has(backdrop)))await register(backdrop,await makeBackdrop(),'image');
       if(!(typeof runtimeAssets!=='undefined'&&runtimeAssets.has(logo)))await register(logo,await makeLogo(),'image');
       const loaded=await Promise.all(MEDIA.map(ensure));const a=Object.fromEntries(MEDIA.map((m,i)=>[m.key,loaded[i]]));
-      state.projectName='LUME · Restaurant Menu Premium';state.format='9:16';state.layout='free';state.mode='edit';state.brand={...(state.brand||{}),name:'LUME',primary:PALETTE.gold,secondary:PALETTE.ivory,font:'Georgia'};state.elements=build(a);state.selectedId=state.elements.find(e=>e.role==='hero')?.id||null;state.needsTextureUpdate=true;
-      if(typeof rebuildCompositor==='function')rebuildCompositor();if(typeof rebuildCloth==='function')rebuildCloth();if(typeof syncUI==='function')syncUI();if(typeof renderLayers==='function')renderLayers();if(typeof renderProperties==='function')renderProperties();state.needsTextureUpdate=true;
-      status('CARTA PREMIUM ACTIVA · vídeo hero + 3 platos + carta completa · todas las capas editables.','ok');if(typeof toast==='function')toast('Restaurant Menu Premium aplicado');return {preset:PRESET_ID,assets:loaded,elements:state.elements.length};
+      state.projectName='LUME · Restaurant Menu Premium';state.format='9:16';state.layout='free';state.mode=modeBefore;state.brand={...(state.brand||{}),name:'LUME',primary:PALETTE.gold,secondary:PALETTE.ivory,font:'Georgia'};state.elements=build(a);state.selectedId=state.elements.find(e=>e.role==='hero')?.id||null;state.needsTextureUpdate=true;
+      if(typeof rebuildCompositor==='function')rebuildCompositor();if(formatBefore!==state.format&&typeof rebuildCloth==='function')rebuildCloth();if(typeof syncUI==='function')syncUI();if(typeof renderLayers==='function')renderLayers();if(typeof renderProperties==='function')renderProperties();state.needsTextureUpdate=true;
+      status('CARTA PREMIUM ACTIVA · contenido actualizado · modo físico preservado.','ok');if(typeof toast==='function')toast('Restaurant Menu Premium aplicado');return {preset:PRESET_ID,assets:loaded,elements:state.elements.length,mode:state.mode};
     }finally{if(b){b.disabled=false;b.textContent='APPLY PREMIUM RESTAURANT MENU';}}
   }
   function inject(){
