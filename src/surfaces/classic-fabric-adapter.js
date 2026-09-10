@@ -9,6 +9,8 @@
     variant: 'default',
     interaction: {gripRadius: Number(state.interaction?.gripRadius || 80), sensitivity: 1}
   });
+  let lastPaperVariant = state.surface?.engine === 'paper3d' && schema.PAPER_VARIANTS?.includes(state.surface?.variant)
+    ? state.surface.variant : 'original';
 
   const context = () => ({
     state,
@@ -28,7 +30,7 @@
     label: 'Classic Fabric / Verlet',
     mounted: false,
     mount(){
-      // Protected 4.1 core: never replace render(), constraints, RAF,
+      // Protected core: never replace render(), constraints, RAF,
       // pointer listeners, grabbedParticle or the validated WebGL canvas.
       this.mounted = true;
       if(canvas) canvas.style.visibility = 'visible';
@@ -45,7 +47,7 @@
       if(state.surface?.interaction) state.surface.interaction.gripRadius = grip;
     },
     diagnostics(){
-      return {mounted:this.mounted, renderer:'existing-webgl-verlet', destructiveOverrides:false};
+      return {mounted:this.mounted, renderer:'existing-webgl-verlet', destructiveOverrides:false, variantOwner:'paper3d-studio-when-paper-active'};
     }
   };
 
@@ -195,11 +197,13 @@
       const engine = controls.querySelector('#surface-engine');
       engine.onchange = () => {
         const requested = engine.value;
-        const variant = requested === 'paper3d' ? 'original' : 'default';
+        if(state.surface?.engine === 'paper3d' && schema.PAPER_VARIANTS?.includes(state.surface.variant)) lastPaperVariant = state.surface.variant;
+        const variant = requested === 'paper3d' ? lastPaperVariant : 'default';
         const normalized = schema.normalize({...state.surface, engine: requested, variant});
         state.surface = manager.sync(normalized, context());
         engine.value = state.surface.engine;
         syncSurfaceUI();
+        if(state.surface.engine === 'paper3d') queueMicrotask(()=>window.BanderolasPaperStudio?.syncUI?.());
       };
     }
   }
@@ -226,13 +230,20 @@
     const gripValue = document.querySelector('#p8-grip-v');
     if(engine) engine.value = state.surface.engine;
     if(variant){
-      variant.innerHTML = state.surface.engine === 'paper3d' ? '<option value="original">Original</option>' : '<option value="default">Default</option>';
-      variant.value = state.surface.variant || (state.surface.engine === 'paper3d' ? 'original' : 'default');
+      if(state.surface.engine === 'paper3d'){
+        if(schema.PAPER_VARIANTS?.includes(state.surface.variant)) lastPaperVariant = state.surface.variant;
+        variant.disabled = false;
+        queueMicrotask(()=>window.BanderolasPaperStudio?.syncUI?.());
+      }else{
+        variant.innerHTML = '<option value="default">Default</option>';
+        variant.value = 'default';
+        variant.disabled = true;
+      }
     }
     if(gripInput) gripInput.value = state.surface.interaction.gripRadius;
     if(gripValue) gripValue.textContent = state.surface.interaction.gripRadius + 'px';
     const status = document.querySelector('#surface-foundation-status');
-    if(status) status.textContent = `SURFACE · ${manager.activeId === 'classic' ? 'Classic adapter active' : manager.activeId} · Classic renderer protected`;
+    if(status) status.textContent = `SURFACE · ${manager.activeId === 'classic' ? 'Classic adapter active · FABRIC / INTERACT available' : manager.activeId} · physical renderer protected`;
   }
 
   function runFoundationCheck(){
@@ -252,7 +263,7 @@
     const status = document.querySelector('#surface-foundation-status');
     if(status && manager.activeId === 'classic'){
       status.classList.toggle('ok', pass); status.classList.toggle('warn', !pass);
-      status.textContent = pass ? 'FOUNDATION PASS · Classic protected · 20× cycle · one panel' : 'FOUNDATION CHECK FAILED · inspect console';
+      status.textContent = pass ? 'FOUNDATION PASS · Classic protected · 20× cycle · one panel · FABRIC / INTERACT ready' : 'FOUNDATION CHECK FAILED · inspect console';
     }
     console.info('[BANDEROLAS] Surface Foundation', result);
     return result;
