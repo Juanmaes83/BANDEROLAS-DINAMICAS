@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>BANDEROLAS PRO · Shared Interactive</title>
+<style>html,body{margin:0;width:100%;height:100%;background:#050201;color:#d7c58e;font-family:ui-monospace,monospace;display:grid;place-items:center}#s{max-width:680px;padding:28px;border:1px solid rgba(212,175,55,.35);background:#0b0705;line-height:1.6}b{color:#d4af37}</style>
+</head>
+<body><div id="s"><b>BANDEROLAS PRO</b><br>Loading shared interactive piece…</div>
+<script>
+'use strict';
+function fromB64url(s){s=s.replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';const bin=atob(s),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return u}
+async function boot(){
+  const raw=location.hash.startsWith('#p=')?location.hash.slice(3):'';
+  if(!raw){document.getElementById('s').innerHTML='<b>BANDEROLAS PRO</b><br>No shared piece found in this URL.';return}
+  if(!('DecompressionStream' in window)){document.getElementById('s').textContent='This browser needs DecompressionStream support.';return}
+  try{
+    const bytes=fromB64url(raw),ds=new DecompressionStream('gzip');
+    const html=await new Response(new Blob([bytes]).stream().pipeThrough(ds)).text();
+    document.open();document.write(html);document.close();
+  }catch(err){console.error(err);document.getElementById('s').innerHTML='<b>Unable to open shared piece.</b><br>The URL may be incomplete or corrupted.'}
+}
+boot();
+</script></body></html>
