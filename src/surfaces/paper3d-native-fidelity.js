@@ -113,7 +113,7 @@
   if(!paper.__nativeFidelityWrapped){
     paper.pushTextureFrame=async function(force=false){
       const normalized=schema.normalize(state.surface||{});
-      const mode=normalized.content?.mode||'native-content';
+      const mode=normalized.content?.mode||'native-layout';
       this.textureCanvas=mode==='full-bleed' ? foundation.context().texture : render();
       return originalPushTexture.call(this,force);
     };
@@ -137,8 +137,8 @@
       <div style="border-top:1px solid #332a25;margin:10px 0 9px"></div>
       <div class="mono" style="margin-bottom:7px">NATIVE FIDELITY · CONTENT</div>
       <div class="form-group"><label>Content mode</label><select id="paper-content-mode" class="form-control">
-        <option value="native-content">Native + Content · recommended</option>
-        <option value="native-layout">Native Safe Layout</option>
+        <option value="native-layout">Native Safe Layout · recommended</option>
+        <option value="native-content">Native + Content · free overlay</option>
         <option value="full-bleed">Full Bleed · replace artwork</option>
       </select></div>
       <div class="form-group"><label>Content opacity <span id="paper-content-opacity-v"></span></label><input id="paper-content-opacity" type="range" min="0" max="1" step="0.01" class="form-control" style="padding:0"></div>
