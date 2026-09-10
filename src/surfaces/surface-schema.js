@@ -1,8 +1,9 @@
 'use strict';
 (() => {
-  const VERSION = 3;
+  const VERSION = 4;
 
   const PAPER_VARIANTS = Object.freeze(['original','japanese','certificate','site-of-the-year']);
+  const PAPER_CONTENT_MODES = Object.freeze(['native-content','native-layout','full-bleed']);
   const PAPER_NATIVE_PRESETS = Object.freeze({
     original: Object.freeze({roughness:0.06, clearcoat:1.0, reflection:0.575, specular:1.0, iridescence:0.10, ior:1.50}),
     japanese: Object.freeze({roughness:0.30, clearcoat:0.62, reflection:0.31, specular:0.75, iridescence:0.82, ior:1.62}),
@@ -14,15 +15,14 @@
     schemaVersion: VERSION,
     engine: 'classic',
     variant: 'default',
+    content: Object.freeze({mode:'full-bleed', opacity:1, safeInset:0}),
     material: Object.freeze({
       preset: 'fabric', opacity:1, transparency:0, translucency:0,
       roughness:0.72, reflection:0.08, depth:0.18, clearcoat:0,
       iridescence:0, ior:1.5, specular:0.25, backlight:0,
       perspective:0.5, lightIntensity:1, lightX:0, lightY:0
     }),
-    motion: Object.freeze({
-      profile:'classic', intensity:1, idle:1, inertia:0, tilt:1, float:1
-    }),
+    motion: Object.freeze({profile:'classic', intensity:1, idle:1, inertia:0, tilt:1, float:1}),
     interaction: Object.freeze({gripRadius:80, sensitivity:1})
   });
 
@@ -30,15 +30,14 @@
     schemaVersion: VERSION,
     engine: 'paper3d',
     variant: 'original',
+    content: Object.freeze({mode:'native-content', opacity:1, safeInset:0.08}),
     material: Object.freeze({
       preset:'native', opacity:1, transparency:0, translucency:0,
       roughness:0.06, reflection:0.575, depth:0.55, clearcoat:1,
       iridescence:0.10, ior:1.5, specular:1, backlight:0,
       perspective:0.5, lightIntensity:1, lightX:0, lightY:0
     }),
-    motion: Object.freeze({
-      profile:'native', intensity:1, idle:1, inertia:0, tilt:1, float:1
-    }),
+    motion: Object.freeze({profile:'native', intensity:1, idle:1, inertia:0, tilt:1, float:1}),
     interaction: Object.freeze({gripRadius:80, sensitivity:1})
   });
 
@@ -73,17 +72,24 @@
       : 'default';
     const base = defaultForEngine(engine, variant);
 
-    // 4.3 projects stored Paper with the old fabric defaults. Migrate those to
-    // the authored/native Paper baseline instead of accidentally flattening 3D Paper.
     const legacyPaper = engine === 'paper3d' &&
-      (finite(src.schemaVersion, 0) < VERSION || src.material?.preset === 'fabric');
+      (finite(src.schemaVersion, 0) < 3 || src.material?.preset === 'fabric');
     const materialSrc = legacyPaper ? {} : (src.material || {});
     const motionSrc = legacyPaper ? {} : (src.motion || {});
+    const contentSrc = src.content || {};
+    const requestedMode = str(contentSrc.mode, base.content.mode);
 
     return {
       schemaVersion: VERSION,
       engine,
       variant,
+      content: {
+        ...base.content,
+        ...contentSrc,
+        mode: engine === 'paper3d' && PAPER_CONTENT_MODES.includes(requestedMode) ? requestedMode : base.content.mode,
+        opacity: clamp(finite(contentSrc.opacity, base.content.opacity), 0, 1),
+        safeInset: clamp(finite(contentSrc.safeInset, base.content.safeInset), 0, 0.24)
+      },
       material: {
         ...base.material,
         ...materialSrc,
@@ -125,7 +131,7 @@
 
   window.BanderolasSurfaceSchema = Object.freeze({
     VERSION, DEFAULT_SURFACE, CLASSIC_DEFAULT, PAPER_DEFAULT,
-    PAPER_VARIANTS, PAPER_NATIVE_PRESETS, FEATURE_FLAGS,
+    PAPER_VARIANTS, PAPER_CONTENT_MODES, PAPER_NATIVE_PRESETS, FEATURE_FLAGS,
     normalize, clone, defaultForEngine, paperNative
   });
 })();
