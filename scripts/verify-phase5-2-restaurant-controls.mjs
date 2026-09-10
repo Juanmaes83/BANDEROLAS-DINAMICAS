@@ -13,7 +13,7 @@ try{new vm.Script(preset,{filename:'restaurant-menu-premium.js'});ok(true,'5.1R 
 for(const file of ['surface-schema.js','surface-manager.js','classic-fabric-adapter.js','paper3d-runtime-bridge.js','paper3d-adapter.js','paper3d-studio.js','paper3d-native-fidelity.js']){
   ok(index.includes(`src/surfaces/${file}?build=4.4r`),`validated 4.4R boot preserved: ${file}`);
 }
-ok(index.indexOf('restaurant-menu-premium.js?build=5.2') < index.indexOf('restaurant-menu-controls.js?build=5.2'),'controls load after restaurant preset');
+ok(index.indexOf('restaurant-menu-premium.js?build=5.1r') < index.indexOf('restaurant-menu-controls.js?build=5.2'),'5.1R preset remains intact and controls load after it');
 ok(controls.includes("PANEL_ID='restaurant-menu-controls-section'"),'single contextual Restaurant Menu panel');
 ok(controls.includes('LIVE DOCUMENT CONTROLS'),'live document controls visible');
 for(const style of ['Dark Fine Dining','Elegant Ivory','Mediterranean Premium'])ok(controls.includes(style),`style preset ${style}`);
