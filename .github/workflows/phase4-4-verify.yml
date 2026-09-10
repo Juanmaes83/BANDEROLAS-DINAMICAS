@@ -1,0 +1,28 @@
+name: Phase 4.4 Verify
+
+on:
+  push:
+    branches:
+      - feat/phase4-4-paper-studio-controls
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: JavaScript syntax
+        run: |
+          node --check src/surfaces/surface-schema.js
+          node --check src/surfaces/surface-manager.js
+          node --check src/surfaces/classic-fabric-adapter.js
+          node --check src/surfaces/paper3d-runtime-bridge.js
+          node --check src/surfaces/paper3d-adapter.js
+          node --check src/surfaces/paper3d-studio.js
+      - name: Paper Studio 4.4 contract
+        run: node scripts/verify-phase4-4.mjs
