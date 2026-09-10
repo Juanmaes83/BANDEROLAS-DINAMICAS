@@ -5,6 +5,7 @@ const read=p=>fs.readFileSync(new URL('../'+p,import.meta.url),'utf8');
 const index=read('index.html');
 const pages=read('src/presets/restaurant-menu-pages.js');
 const fail=[];const ok=(v,m)=>v?console.log('PASS '+m):fail.push(m);
+const compact=pages.replace(/\s+/g,'');
 
 try{new vm.Script(pages,{filename:'restaurant-menu-pages.js'});ok(true,'pages module parses');}catch(e){fail.push('pages parse: '+e.message);}
 for(const file of ['surface-schema.js','surface-manager.js','classic-fabric-adapter.js','paper3d-runtime-bridge.js','paper3d-adapter.js','paper3d-studio.js','paper3d-native-fidelity.js']){
@@ -12,10 +13,10 @@ for(const file of ['surface-schema.js','surface-manager.js','classic-fabric-adap
 }
 ok(index.indexOf('restaurant-menu-controls.js?build=5.2') < index.indexOf('restaurant-menu-pages.js?build=5.3'),'page manager loads after restaurant controls');
 ok(pages.includes("mode:'single-physical-sheet'"),'document mode is one physical sheet with swappable pages');
-ok(pages.includes('state.elements=deep(target.elements||[])'),'page activation swaps content through the existing state.elements compositor');
-ok(pages.includes('state.restaurantMenu=deep(target.restaurantMenu||{})'),'restaurant controls follow active page model');
-ok(pages.includes("guardedSurface=typeof state.surface"),'active surface state is explicitly guarded during page switch');
-ok(pages.includes('if(guardedSurface!==undefined) state.surface=guardedSurface'),'page switch restores untouched surface state');
+ok(compact.includes('state.elements=deep(target.elements||[])'),'page activation swaps content through the existing state.elements compositor');
+ok(compact.includes('state.restaurantMenu=deep(target.restaurantMenu||{})'),'restaurant controls follow active page model');
+ok(compact.includes("guardedSurface=typeofstate.surface"),'active surface state is explicitly guarded during page switch');
+ok(compact.includes('if(guardedSurface!==undefined)state.surface=guardedSurface'),'page switch restores untouched surface state');
 ok(pages.includes("Duplicate Full")&&pages.includes("Duplicate Layout"),'full and layout-only duplication controls exist');
 ok(pages.includes("+ Add Page")&&pages.includes("Delete Page"),'page add/delete controls exist');
 ok(pages.includes("Move Up")&&pages.includes("Move Down"),'page ordering controls exist');
