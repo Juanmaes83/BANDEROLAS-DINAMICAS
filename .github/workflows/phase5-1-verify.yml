@@ -5,7 +5,13 @@ on:
     paths:
       - 'index.html'
       - 'src/presets/restaurant-menu-premium.js'
+      - 'src/surfaces/surface-manager.js'
+      - 'src/surfaces/classic-fabric-adapter.js'
+      - 'src/surfaces/paper3d-adapter.js'
+      - 'src/surfaces/paper3d-runtime-bridge.js'
+      - 'vendor/threeui/3d-paper/**'
       - 'scripts/verify-phase5-1-restaurant-menu.mjs'
+      - 'scripts/verify-paper-variants.mjs'
       - '.github/workflows/phase5-1-verify.yml'
   workflow_dispatch:
 
@@ -22,3 +28,5 @@ jobs:
           node-version: '22'
       - name: Phase 5.1 static regression
         run: node scripts/verify-phase5-1-restaurant-menu.mjs
+      - name: Paper variants regression
+        run: node scripts/verify-paper-variants.mjs
