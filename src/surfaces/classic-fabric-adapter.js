@@ -20,8 +20,6 @@
 
   function ensureSurface(value = state.surface){
     state.surface = schema.normalize(value || DEFAULT());
-    state.surface.engine = 'classic';
-    state.surface.variant = 'default';
     return state.surface;
   }
 
@@ -30,18 +28,16 @@
     label: 'Classic Fabric / Verlet',
     mounted: false,
     mount(){
-      // Deliberately non-destructive: do not touch render(), constraints,
-      // requestAnimationFrame, pointer listeners or grabbedParticle.
+      // Protected 4.1 core: never replace render(), constraints, RAF,
+      // pointer listeners, grabbedParticle or the validated WebGL canvas.
       this.mounted = true;
+      if(canvas) canvas.style.visibility = 'visible';
     },
-    unmount(){
-      // Classic remains the protected fallback. No renderer teardown in 4.1.
-      this.mounted = false;
-    },
-    setTexture(){ /* existing WebGL texture upload path remains authoritative */ },
-    setFormat(){ /* existing rebuildCompositor/rebuildCloth path remains authoritative */ },
-    setMaterial(){ /* Classic appearance remains governed by the validated shader */ },
-    setMotion(){ /* Classic wind/gravity/stiffness remain governed by state.fabric */ },
+    unmount(){ this.mounted = false; },
+    setTexture(){},
+    setFormat(){},
+    setMaterial(){},
+    setMotion(){},
     setInteraction(value){
       const grip = Math.max(40, Math.min(140, Number(value?.gripRadius || 80)));
       state.interaction = state.interaction || {};
@@ -54,12 +50,14 @@
   };
 
   manager.register('classic', classicFabricAdapter);
-  ensureSurface();
-  state.surface = manager.sync(state.surface, context());
+  const requestedAtBoot = schema.clone(ensureSurface());
+  if(requestedAtBoot.engine !== 'classic' && !manager.has(requestedAtBoot.engine)){
+    window.__bpRequestedSurfaceAtBoot = requestedAtBoot;
+    state.surface = manager.sync({...requestedAtBoot, engine:'classic', variant:'default'}, context());
+  } else {
+    state.surface = manager.sync(requestedAtBoot, context());
+  }
 
-  // ---- Persistence bridge -------------------------------------------------
-  // Save/Template/JSON call serializableProject dynamically, so adding surface
-  // here automatically propagates to those outputs without modifying the core.
   if(!window.__bpSurfaceSerializableWrapped){
     const baseSerializableProject = serializableProject;
     serializableProject = function(){
@@ -131,9 +129,6 @@
     window.__bpSurfaceProjectWrapped = true;
   }
 
-  // Portable JSON import is implemented inside production.js' closure. Wrap
-  // its input handler so the original import completes first, then restore the
-  // surface block from the same file.
   const jsonInput = document.querySelector('#p3-json-input');
   if(jsonInput && jsonInput.onchange && !jsonInput.dataset.surfaceWrapped){
     const baseImport = jsonInput.onchange;
@@ -168,7 +163,6 @@
     recover.dataset.surfaceWrapped = '1';
   }
 
-  // ---- Single-panel Surface / 3D UI --------------------------------------
   let surfaceDetails = [...document.querySelectorAll('#ui-panel details')].find(d =>
     d.querySelector('summary')?.textContent.trim().toLowerCase().startsWith('premium interaction')
   );
@@ -186,7 +180,7 @@
           <label>Surface Engine</label>
           <select id="surface-engine" class="form-control">
             <option value="classic">Classic Fabric / Verlet</option>
-            <option value="paper3d" disabled>3D Paper · next</option>
+            <option value="paper3d" disabled>3D Paper · loading source lock</option>
             <option value="woven" disabled>Woven Cloth · source lock pending</option>
           </select>
         </div>
@@ -201,7 +195,8 @@
       const engine = controls.querySelector('#surface-engine');
       engine.onchange = () => {
         const requested = engine.value;
-        const normalized = schema.normalize({...state.surface, engine: requested});
+        const variant = requested === 'paper3d' ? 'original' : 'default';
+        const normalized = schema.normalize({...state.surface, engine: requested, variant});
         state.surface = manager.sync(normalized, context());
         engine.value = state.surface.engine;
         syncSurfaceUI();
@@ -230,51 +225,47 @@
     const gripInput = document.querySelector('#p8-grip');
     const gripValue = document.querySelector('#p8-grip-v');
     if(engine) engine.value = state.surface.engine;
-    if(variant) variant.value = state.surface.variant || 'default';
+    if(variant){
+      variant.innerHTML = state.surface.engine === 'paper3d' ? '<option value="original">Original</option>' : '<option value="default">Default</option>';
+      variant.value = state.surface.variant || (state.surface.engine === 'paper3d' ? 'original' : 'default');
+    }
     if(gripInput) gripInput.value = state.surface.interaction.gripRadius;
     if(gripValue) gripValue.textContent = state.surface.interaction.gripRadius + 'px';
     const status = document.querySelector('#surface-foundation-status');
-    if(status) status.textContent = `FOUNDATION 4.1 · ${manager.activeId === 'classic' ? 'Classic adapter active' : manager.activeId} · renderer protected`;
+    if(status) status.textContent = `SURFACE · ${manager.activeId === 'classic' ? 'Classic adapter active' : manager.activeId} · Classic renderer protected`;
   }
 
   function runFoundationCheck(){
+    const original = schema.clone(ensureSurface());
     const beforeCanvas = document.querySelectorAll('#glcanvas').length;
     const beforePanel = document.querySelectorAll('#ui-panel').length;
     for(let i=0;i<20;i++) manager.use('classic', context());
-    state.surface = manager.sync(state.surface, context());
-    const serialized = serializableProject();
-    const result = {
-      pass: manager.activeId === 'classic' &&
-        manager.has('classic') &&
-        beforeCanvas === 1 && document.querySelectorAll('#glcanvas').length === 1 &&
-        beforePanel === 1 && document.querySelectorAll('#ui-panel').length === 1 &&
-        serialized?.surface?.engine === 'classic',
-      engine: manager.activeId,
-      serializedSurface: serialized?.surface || null,
-      canvasCount: document.querySelectorAll('#glcanvas').length,
-      panelCount: document.querySelectorAll('#ui-panel').length,
-      manager: manager.diagnostics(),
-      adapter: classicFabricAdapter.diagnostics()
-    };
+    const classicSerialized = {...serializableProject(), surface:{...original,engine:'classic',variant:'default'}};
+    const pass = manager.activeId === 'classic' && manager.has('classic') &&
+      beforeCanvas === 1 && document.querySelectorAll('#glcanvas').length === 1 &&
+      beforePanel === 1 && document.querySelectorAll('#ui-panel').length === 1 &&
+      classicSerialized?.surface?.engine === 'classic';
+    const restore = manager.has(original.engine) ? original : {...original,engine:'classic',variant:'default'};
+    state.surface = manager.sync(restore, context());
+    syncSurfaceUI();
+    const result = {pass,engine:manager.activeId,canvasCount:document.querySelectorAll('#glcanvas').length,panelCount:document.querySelectorAll('#ui-panel').length,manager:manager.diagnostics(),adapter:classicFabricAdapter.diagnostics()};
     const status = document.querySelector('#surface-foundation-status');
-    if(status){
-      status.classList.toggle('ok', result.pass);
-      status.classList.toggle('warn', !result.pass);
-      status.textContent = result.pass ? 'FOUNDATION 4.1 PASS · 20× engine cycle · one canvas · one panel · surface serializes' : 'FOUNDATION 4.1 CHECK FAILED · inspect console';
+    if(status && manager.activeId === 'classic'){
+      status.classList.toggle('ok', pass); status.classList.toggle('warn', !pass);
+      status.textContent = pass ? 'FOUNDATION PASS · Classic protected · 20× cycle · one panel' : 'FOUNDATION CHECK FAILED · inspect console';
     }
-    console.info('[BANDEROLAS] Surface Foundation 4.1', result);
+    console.info('[BANDEROLAS] Surface Foundation', result);
     return result;
   }
 
   window.BanderolasSurfaceFoundation = Object.freeze({
     ensureSurface,
     sync: () => { state.surface = manager.sync(ensureSurface(), context()); syncSurfaceUI(); return state.surface; },
+    syncUI: syncSurfaceUI,
+    context,
     check: runFoundationCheck
   });
 
   syncSurfaceUI();
-  const initialCheck = runFoundationCheck();
-  const version = document.querySelector('.panel-header .version');
-  if(version) version.textContent = 'PHASE 4.1 · SURFACE FOUNDATION';
-  try{toast(initialCheck.pass ? 'PHASE 4.1 loaded · Classic physics protected' : 'PHASE 4.1 needs inspection')}catch{}
+  runFoundationCheck();
 })();
