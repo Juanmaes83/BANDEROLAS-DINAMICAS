@@ -1,15 +1,20 @@
 'use strict';
 (() => {
-  const BG_MARKER = '<div id="bg"><h1>NOCTURNE</h1></div>';
   const FN_START = 'function makeCertTexture(){';
   const FN_END_MARKER = '\n\n/* ======================================================================';
+
+  function stripAuthoredChrome(source){
+    return String(source)
+      .replace(/<div id="bg"[\s\S]*?<\/div>/, '<div id="bg" aria-hidden="true" style="display:none!important"></div>')
+      .replace(/<div id="hint"[\s\S]*?<\/div>/, '');
+  }
 
   function buildRuntimeSource(source){
     if(typeof source !== 'string' || !source.includes(FN_START)){
       throw new Error('ThreeDPaper makeCertTexture marker not found');
     }
 
-    let out = source.replace(BG_MARKER, '<div id="bg" aria-hidden="true" style="display:none!important"></div>');
+    let out = stripAuthoredChrome(source);
     const start = out.indexOf(FN_START);
     const end = out.indexOf(FN_END_MARKER, start);
     if(start < 0 || end < 0) throw new Error('ThreeDPaper texture function boundary not found');
@@ -62,19 +67,17 @@
 }`;
 
     out = out.slice(0,start) + fn + out.slice(end);
-
-    // Remove authored demo helper copy while keeping the original ThreeUI canvas,
-    // shaders, material, geometry, lighting, interaction and responsive runtime.
-    out = out.replace(/<div id="hint"[\s\S]*?<\/div>/, '');
     return out;
   }
 
   function diagnostics(source, patched){
+    const demoBg = /<div id="bg"[^>]*>\s*<h1[\s\S]*?<\/h1>\s*<\/div>/;
     return {
-      sourceHasDemoBackground: String(source||'').includes('>NOCTURNE<'),
-      runtimeHasDemoBackground: String(patched||'').includes('>NOCTURNE<'),
+      sourceHasDemoBackground: demoBg.test(String(source||'')),
+      runtimeHasDemoBackground: demoBg.test(String(patched||'')),
       runtimeHasBridge: String(patched||'').includes('banderolas:paper-texture'),
-      runtimeUsesCanvasTexture: String(patched||'').includes('new T.CanvasTexture(c)')
+      runtimeUsesCanvasTexture: String(patched||'').includes('new T.CanvasTexture(c)'),
+      runtimeHasHint: /<div id="hint"/.test(String(patched||''))
     };
   }
 
