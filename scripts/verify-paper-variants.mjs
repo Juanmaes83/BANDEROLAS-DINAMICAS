@@ -27,6 +27,11 @@ ok(!paper.includes('variant.disabled = true'), 'Paper adapter no longer force-di
 ok(paper.includes('setVariant(value, context)'), 'Paper adapter can remount on variant changes');
 ok(bridge.includes('stripAuthoredChrome'), 'runtime bridge strips authored demo chrome for every variant');
 
+const sandbox={window:{}};
+vm.runInNewContext(bridge,sandbox,{filename:'paper3d-runtime-bridge.js'});
+const bridgeApi=sandbox.window.BanderolasPaper3DBridge;
+ok(!!bridgeApi?.buildRuntimeSource,'bridge API initializes');
+
 const variants = [
   ['original','vendor/threeui/3d-paper/src/shaders/3d-paper/sources/3d-paper.html','8ec1b71c0dbcafbadf908100ae2a08045d0a1087c00a09d28245ef19366c7353',630847],
   ['site-of-the-year','vendor/threeui/3d-paper/src/shaders/3d-paper/sources/3d-paper-site-of-the-year.html','fdef93fa96a3927430ef35411af70568c56b9488921aead8f36be36800689b7d',633404],
@@ -45,7 +50,17 @@ for(const [id,path,hash,bytes] of variants){
   ok(entry?.sha256===hash && entry?.bytes===bytes,`${id} SOURCE_LOCK entry`);
   ok(text.includes('function makeCertTexture(){'),`${id} bridge texture marker`);
   ok(text.includes('\n\n/* ======================================================================'),`${id} bridge function boundary`);
-  ok(text.includes('const TW') && text.includes('const TH'),`${id} texture dimensions available`);
+  ok(/\bTW\b/.test(text) && /\bTH\b/.test(text),`${id} texture dimensions available`);
+  try{
+    const patched=bridgeApi.buildRuntimeSource(text);
+    const d=bridgeApi.diagnostics(text,patched);
+    ok(d.runtimeHasBridge,`${id} dynamic CanvasTexture bridge injected`);
+    ok(!d.runtimeHasDemoBackground,`${id} authored demo background removed`);
+    ok(!d.runtimeHasHint,`${id} authored hint removed`);
+    ok(d.runtimeUsesCanvasTexture,`${id} remains CanvasTexture based`);
+  }catch(error){
+    fail.push(`${id} bridge execution: ${error.message}`);
+  }
 }
 
 if(fail.length){
