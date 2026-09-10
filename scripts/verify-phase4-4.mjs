@@ -31,17 +31,25 @@ for (const [name,path] of variants) {
   if (source.includes('BANDEROLAS')) throw new Error(`${name}: vendor source was mutated with BANDEROLAS code`);
   const runtime = window.BanderolasPaper3DBridge.buildRuntimeSource(source,{variant:name});
   const d = window.BanderolasPaper3DBridge.diagnostics(source,runtime);
-  if (!d.runtimeHasBridge || !d.runtimeHasControls || d.runtimeHasVisibleDemoBackground || !d.pointerSensitivityPatched || !d.inertiaPatched) {
-    throw new Error(`${name}: derived runtime gate failed ${JSON.stringify(d)}`);
+  if (!d.runtimeHasBridge || !d.runtimeHasControls || d.runtimeHasVisibleDemoBackground ||
+      !d.runtimePreservesNativeTexture || !d.runtimeSuppressesOnlyText || !d.runtimeHasNativeBase ||
+      !d.runtimeHasContentModes || !d.runtimeHasExactNativeRestore ||
+      !d.pointerSensitivityPatched || !d.inertiaPatched) {
+    throw new Error(`${name}: native-fidelity runtime gate failed ${JSON.stringify(d)}`);
   }
-  for (const marker of ['banderolas:paper-texture','banderolas:paper-controls','__bpPaperEffectiveOpacity','__bpPaperMotion']) {
-    if (!runtime.includes(marker)) throw new Error(`${name}: missing derived runtime marker ${marker}`);
+  if (!runtime.includes('const __bpNativeMakeCertTexture = makeCertTexture')) {
+    throw new Error(`${name}: original makeCertTexture is not wrapped/preserved`);
+  }
+  if (!runtime.includes("if(m.preset==='native')")) throw new Error(`${name}: exact Native material bypass missing`);
+  for (const marker of ['nativeBase','native-content','native-layout','full-bleed','banderolas:paper-texture','banderolas:paper-controls']) {
+    if (!runtime.includes(marker)) throw new Error(`${name}: missing native-fidelity marker ${marker}`);
   }
 }
 
 const schema = await fs.readFile('src/surfaces/surface-schema.js','utf8');
 const adapter = await fs.readFile('src/surfaces/paper3d-adapter.js','utf8');
 const studio = await fs.readFile('src/surfaces/paper3d-studio.js','utf8');
+const fidelity = await fs.readFile('src/surfaces/paper3d-native-fidelity.js','utf8');
 const index = await fs.readFile('index.html','utf8');
 
 for (const v of ['original','japanese','certificate','site-of-the-year']) {
@@ -53,10 +61,15 @@ for (const preset of ['opaque','transparent','translucent','glass','washi','irid
 for (const preset of ['calm','float','tilt','inertial','dynamic']) {
   if (!studio.includes(`${preset}:`)) throw new Error(`motion preset missing: ${preset}`);
 }
-if (!schema.includes('const VERSION = 3')) throw new Error('surface schema v3 not active');
+if (!schema.includes('const VERSION = 4')) throw new Error('surface schema v4 not active');
+for (const mode of ['native-content','native-layout','full-bleed']) {
+  if (!schema.includes(mode) || !fidelity.includes(mode)) throw new Error(`content mode missing: ${mode}`);
+}
+if (!fidelity.includes("getContext('2d',{alpha:true})")) throw new Error('transparent BANDEROLAS content compositor missing');
+if (!fidelity.includes('originalPushTexture.call(this,force)')) throw new Error('Paper texture pump is not wrapped by Native Fidelity');
 if (!adapter.includes("manager.register('paper3d'")) throw new Error('paper3d adapter not registered');
-if (!index.includes('paper3d-studio.js?build=4.4')) throw new Error('Paper Studio script not loaded by production entry');
-if (index.indexOf('paper3d-studio.js') < index.indexOf('paper3d-adapter.js')) throw new Error('Paper Studio load order invalid');
+if (!index.includes('paper3d-native-fidelity.js?build=4.4r')) throw new Error('Native Fidelity script not loaded by production entry');
+if (index.indexOf('paper3d-native-fidelity.js') < index.indexOf('paper3d-adapter.js')) throw new Error('Native Fidelity load order invalid');
 
-console.log('PHASE 4.4 STATIC VERIFY PASS');
-console.log('4/4 exact variant hashes; 4/4 derived runtimes; live material/motion bridge; Paper Studio presets; schema v3.');
+console.log('PHASE 4.4R NATIVE FIDELITY STATIC VERIFY PASS');
+console.log('4/4 exact vendor hashes; exact makeCertTexture preserved; demo text suppressed only; native artwork/material retained; transparent BANDEROLAS overlay + 3 content modes; schema v4.');
