@@ -15,7 +15,7 @@
     oldSyncUI();
     if(document.querySelector('#bp-bg-type')) $('#bp-bg-type').value = state.background?.type || 'solid';
     if(document.querySelector('#bp-bg-color')) $('#bp-bg-color').value = state.background?.color || '#d1c099';
-    const version=document.querySelector('.panel-header .version');if(version)version.textContent='PHASE 1 + 2 · FIX 3.2';
+    const version=document.querySelector('.panel-header .version');if(version)version.textContent='PHASE 1 + 2 · FIX 3.3';
   };
 
   const oldOpenProject = openProject;
@@ -50,6 +50,10 @@
   };
   $('#apply-brand').onclick=applyBrand;
 
+  try{
+    const auto=JSON.parse(localStorage.getItem('banderolas-pro-autosave-v3')||'null');
+    if(auto?.background){state.background=deepClone(auto.background);generateBasePaper();state.needsTextureUpdate=true}
+  }catch{}
   window.addEventListener('beforeunload',()=>{try{localStorage.setItem('banderolas-pro-autosave-v3',JSON.stringify(serializableProject()))}catch{}});
   syncUI();
 })();
