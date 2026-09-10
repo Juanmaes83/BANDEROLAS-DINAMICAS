@@ -75,10 +75,10 @@
     if(captureGlobal)syncGlobalFromActive();
   }
 
-  async function refreshEditorAfterPageSwap(){
+  async function refreshEditorAfterPageSwap({rebuildPhysical=false}={}){
     if(typeof rebuildCompositor==='function')rebuildCompositor();
     if(typeof hydrateAssets==='function')await hydrateAssets();
-    if(typeof rebuildCloth==='function')rebuildCloth();
+    if(rebuildPhysical&&typeof rebuildCloth==='function')rebuildCloth();
     if(typeof syncUI==='function')syncUI();
     if(typeof renderLayers==='function')renderLayers();
     if(typeof renderProperties==='function')renderProperties();
@@ -91,13 +91,19 @@
     if(saveCurrent)saveActive();
     applyGlobalToPage(target,doc);
     const guardedSurface=typeof state.surface!=='undefined'?deep(state.surface):undefined;
+    const guardedMode=state.mode;
+    const previousFormat=state.format||'9:16';
+    const nextFormat=target.format||'9:16';
+    const formatChanged=previousFormat!==nextFormat;
     doc.activePageId=target.id;
-    state.format=target.format||'9:16';state.layout=target.layout||'free';state.elements=deep(target.elements||[]);state.restaurantMenu=deep(target.restaurantMenu||{});state.selectedId=null;
-    await refreshEditorAfterPageSwap();
+    state.format=nextFormat;state.layout=target.layout||'free';state.elements=deep(target.elements||[]);state.restaurantMenu=deep(target.restaurantMenu||{});state.selectedId=null;
+    await refreshEditorAfterPageSwap({rebuildPhysical:formatChanged});
     if(window.BanderolasRestaurantMenuControls?.applyAll)await window.BanderolasRestaurantMenuControls.applyAll(state.restaurantMenu,{assets:false});
     if(guardedSurface!==undefined)state.surface=guardedSurface;
+    state.mode=guardedMode;
+    if(typeof syncUI==='function')syncUI();
     state.needsTextureUpdate=true;saveActive({captureGlobal:false});renderPanel();
-    if(typeof toast==='function')toast(`${target.name} · same physical surface`);
+    if(typeof toast==='function')toast(`${target.name} · same physical surface${formatChanged?' · geometry resized':' · fabric deformation preserved'}`);
   }
 
   function cloneElements(elements){return deep(elements||[]).map((el,i)=>({...el,id:uidSafe(el.type||'layer'),zIndex:i}));}
@@ -134,7 +140,7 @@
 
   async function setPageFormat(format){
     const doc=ensureDocument();if(!doc)return;const page=doc.pages[pageIndex(doc)];if(!page||page.format===format)return;
-    if(typeof pushHistory==='function')pushHistory();page.format=format;state.format=format;await refreshEditorAfterPageSwap();saveActive({captureGlobal:false});renderPanel();
+    if(typeof pushHistory==='function')pushHistory();page.format=format;state.format=format;await refreshEditorAfterPageSwap({rebuildPhysical:true});saveActive({captureGlobal:false});renderPanel();
   }
 
   function renamePage(value){const doc=ensureDocument();if(!doc)return;const page=doc.pages[pageIndex(doc)];if(!page)return;page.name=String(value||'Page').trim()||'Page';renderPageSelect(doc);}
@@ -148,7 +154,7 @@
     const body=$(`#${PANEL_ID} .section-body`),doc=ensureDocument();if(!body)return;
     if(!doc){body.innerHTML='<div class="status">Apply Restaurant Menu Premium to enable multipage document controls.</div>';return;}
     const page=doc.pages[pageIndex(doc)];
-    body.innerHTML=`<div class="status ok" style="margin-bottom:9px">SINGLE PHYSICAL SHEET · pages swap content on the same Classic / Paper surface. 3D and fabric interaction remain the presentation skeleton.</div><div class="grid2" style="margin-bottom:7px"><button id="restaurant-page-prev" class="mini-btn">← Previous</button><button id="restaurant-page-next" class="mini-btn">Next →</button></div><div class="form-group"><label>Page <span id="restaurant-page-count">${pageIndex(doc)+1} / ${doc.pages.length}</span></label><select id="restaurant-page-select" class="form-control"></select></div><div class="form-group"><label>Page name</label><input id="restaurant-page-name" class="form-control" value="${escapeHtmlSafe(page.name)}"></div><div class="form-group"><label>Page format</label><select id="restaurant-page-format" class="form-control"><option value="9:16" ${page.format==='9:16'?'selected':''}>9:16 · Portrait</option><option value="1:1" ${page.format==='1:1'?'selected':''}>1:1 · Square</option><option value="16:9" ${page.format==='16:9'?'selected':''}>16:9 · Landscape</option></select></div><div class="grid2"><button id="restaurant-page-add" class="mini-btn">+ Add Page</button><button id="restaurant-page-duplicate" class="mini-btn">Duplicate Full</button></div><div class="grid2" style="margin-top:6px"><button id="restaurant-page-layout" class="mini-btn">Duplicate Layout</button><button id="restaurant-page-delete" class="mini-btn danger">Delete Page</button></div><div class="grid2" style="margin-top:6px"><button id="restaurant-page-up" class="mini-btn">Move Up</button><button id="restaurant-page-down" class="mini-btn">Move Down</button></div><div class="status" style="margin-top:8px">GLOBAL across pages: restaurant identity, visual style, reservations, logo and editorial plate. PAGE-SPECIFIC: hero, Chef Note, signature dishes, menu sections and prices.</div>`;
+    body.innerHTML=`<div class="status ok" style="margin-bottom:9px">SINGLE PHYSICAL SHEET · pages swap content on the same Classic / Paper surface. Same-format pages preserve the current fabric deformation.</div><div class="grid2" style="margin-bottom:7px"><button id="restaurant-page-prev" class="mini-btn">← Previous</button><button id="restaurant-page-next" class="mini-btn">Next →</button></div><div class="form-group"><label>Page <span id="restaurant-page-count">${pageIndex(doc)+1} / ${doc.pages.length}</span></label><select id="restaurant-page-select" class="form-control"></select></div><div class="form-group"><label>Page name</label><input id="restaurant-page-name" class="form-control" value="${escapeHtmlSafe(page.name)}"></div><div class="form-group"><label>Page format</label><select id="restaurant-page-format" class="form-control"><option value="9:16" ${page.format==='9:16'?'selected':''}>9:16 · Portrait</option><option value="1:1" ${page.format==='1:1'?'selected':''}>1:1 · Square</option><option value="16:9" ${page.format==='16:9'?'selected':''}>16:9 · Landscape</option></select></div><div class="grid2"><button id="restaurant-page-add" class="mini-btn">+ Add Page</button><button id="restaurant-page-duplicate" class="mini-btn">Duplicate Full</button></div><div class="grid2" style="margin-top:6px"><button id="restaurant-page-layout" class="mini-btn">Duplicate Layout</button><button id="restaurant-page-delete" class="mini-btn danger">Delete Page</button></div><div class="grid2" style="margin-top:6px"><button id="restaurant-page-up" class="mini-btn">Move Up</button><button id="restaurant-page-down" class="mini-btn">Move Down</button></div><div class="status" style="margin-top:8px">GLOBAL across pages: restaurant identity, visual style, reservations, logo and editorial plate. PAGE-SPECIFIC: hero, Chef Note, signature dishes, menu sections and prices.</div>`;
     renderPageSelect(doc);bindPanel();
   }
 
