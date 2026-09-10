@@ -4,6 +4,13 @@
   const manager = window.surfaceManager;
   if(!schema || !manager) throw new Error('Surface foundation load order invalid');
 
+  const PAPER_VARIANTS = Object.freeze([
+    {value:'original',label:'Original'},
+    {value:'site-of-the-year',label:'Site of the Year'},
+    {value:'japanese',label:'Japanese'},
+    {value:'certificate',label:'Certificate'}
+  ]);
+
   const DEFAULT = () => schema.normalize({
     engine: 'classic',
     variant: 'default',
@@ -34,6 +41,7 @@
       if(canvas) canvas.style.visibility = 'visible';
     },
     unmount(){ this.mounted = false; },
+    setVariant(){},
     setTexture(){},
     setFormat(){},
     setMaterial(){},
@@ -193,12 +201,20 @@
       body.insertBefore(controls, body.firstChild);
 
       const engine = controls.querySelector('#surface-engine');
+      const variant = controls.querySelector('#surface-variant');
       engine.onchange = () => {
         const requested = engine.value;
-        const variant = requested === 'paper3d' ? 'original' : 'default';
-        const normalized = schema.normalize({...state.surface, engine: requested, variant});
+        const currentVariant = state.surface?.variant;
+        const paperVariant = PAPER_VARIANTS.some(v=>v.value===currentVariant) ? currentVariant : 'original';
+        const normalized = schema.normalize({...state.surface, engine: requested, variant: requested === 'paper3d' ? paperVariant : 'default'});
         state.surface = manager.sync(normalized, context());
         engine.value = state.surface.engine;
+        syncSurfaceUI();
+      };
+      variant.onchange = () => {
+        if(state.surface?.engine !== 'paper3d') return;
+        const requested = PAPER_VARIANTS.some(v=>v.value===variant.value) ? variant.value : 'original';
+        state.surface = manager.sync(schema.normalize({...state.surface,variant:requested}), context());
         syncSurfaceUI();
       };
     }
@@ -226,13 +242,20 @@
     const gripValue = document.querySelector('#p8-grip-v');
     if(engine) engine.value = state.surface.engine;
     if(variant){
-      variant.innerHTML = state.surface.engine === 'paper3d' ? '<option value="original">Original</option>' : '<option value="default">Default</option>';
-      variant.value = state.surface.variant || (state.surface.engine === 'paper3d' ? 'original' : 'default');
+      if(state.surface.engine === 'paper3d'){
+        variant.innerHTML = PAPER_VARIANTS.map(v=>`<option value="${v.value}">${v.label}</option>`).join('');
+        variant.disabled = false;
+        variant.value = PAPER_VARIANTS.some(v=>v.value===state.surface.variant) ? state.surface.variant : 'original';
+      }else{
+        variant.innerHTML = '<option value="default">Default</option>';
+        variant.value = 'default';
+        variant.disabled = true;
+      }
     }
     if(gripInput) gripInput.value = state.surface.interaction.gripRadius;
     if(gripValue) gripValue.textContent = state.surface.interaction.gripRadius + 'px';
     const status = document.querySelector('#surface-foundation-status');
-    if(status) status.textContent = `SURFACE · ${manager.activeId === 'classic' ? 'Classic adapter active' : manager.activeId} · Classic renderer protected`;
+    if(status) status.textContent = `SURFACE · ${manager.activeId === 'classic' ? 'Classic adapter active' : manager.activeId} · ${state.surface.variant || 'default'} · Classic renderer protected`;
   }
 
   function runFoundationCheck(){
@@ -263,7 +286,8 @@
     sync: () => { state.surface = manager.sync(ensureSurface(), context()); syncSurfaceUI(); return state.surface; },
     syncUI: syncSurfaceUI,
     context,
-    check: runFoundationCheck
+    check: runFoundationCheck,
+    paperVariants: PAPER_VARIANTS
   });
 
   syncSurfaceUI();
