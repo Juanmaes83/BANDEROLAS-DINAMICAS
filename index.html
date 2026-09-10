@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="es">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>BANDEROLAS PRO · Dynamic Surface Studio</title></head>
-<body style="margin:0;background:#000;color:#d4af37;font-family:monospace"><div id="loading" style="padding:24px">Loading BANDEROLAS PRO · PHASE 4.3…</div><script>
-fetch('./src/editor-base.html?build=4.3').then(r=>{if(!r.ok)throw new Error(r.status);return r.text()}).then(html=>{
-  const boot='<script src="./src/editor-features.js?build=4.3"><\/script><script src="./src/state-sync.js?build=4.3"><\/script><script src="./src/composition-tools.js?build=4.3"><\/script><script src="./src/interaction-stable.js?build=4.3"><\/script><script src="./src/production.js?build=4.3"><\/script><script src="./src/delivery.js?build=4.3"><\/script><script src="./src/surfaces/surface-schema.js?build=4.3"><\/script><script src="./src/surfaces/surface-manager.js?build=4.3"><\/script><script src="./src/surfaces/classic-fabric-adapter.js?build=4.3"><\/script><script src="./src/surfaces/paper3d-runtime-bridge.js?build=4.3"><\/script><script src="./src/surfaces/paper3d-adapter.js?build=4.3"><\/script>';
+<body style="margin:0;background:#000;color:#d4af37;font-family:monospace"><div id="loading" style="padding:24px">Loading BANDEROLAS PRO · PHASE 5.1…</div><script>
+fetch('./src/editor-base.html?build=5.1').then(r=>{if(!r.ok)throw new Error(r.status);return r.text()}).then(html=>{
+  const boot='<script src="./src/editor-features.js?build=5.1"><\/script><script src="./src/state-sync.js?build=5.1"><\/script><script src="./src/composition-tools.js?build=5.1"><\/script><script src="./src/interaction-stable.js?build=5.1"><\/script><script src="./src/production.js?build=5.1"><\/script><script src="./src/delivery.js?build=5.1"><\/script><script src="./src/surfaces/surface-schema.js?build=5.1"><\/script><script src="./src/surfaces/surface-manager.js?build=5.1"><\/script><script src="./src/surfaces/classic-fabric-adapter.js?build=5.1"><\/script><script src="./src/surfaces/paper3d-runtime-bridge.js?build=5.1"><\/script><script src="./src/surfaces/paper3d-adapter.js?build=5.1"><\/script><script src="./src/presets/restaurant-menu-premium.js?build=5.1"><\/script>';
   html=html.replace('</body>',boot+'</body>');
   document.open();document.write(html);document.close();
 }).catch(e=>{document.getElementById('loading').textContent='Unable to load BANDEROLAS PRO: '+e.message});
