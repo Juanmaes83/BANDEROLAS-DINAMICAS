@@ -1,91 +1,86 @@
 # BANDEROLAS PRO
 
-Editor de creatividades interactivas sobre superficies físicas y 3D. La composición (imagen, vídeo, logos y texto) se renderiza en una única textura que se aplica al motor visual activo, de modo que el contenido forma parte real de la superficie y responde al movimiento, deformación, profundidad e interacción.
+Editor de creatividades interactivas sobre superficies físicas y 3D. La composición (imagen, vídeo, logos y texto) se aplica al motor visual activo manteniendo un único editor y un único panel de personalización.
 
 ## Producción estable — Fases 1 a 3
 
-La entrada canónica es `index.html`. Carga el editor base y los módulos de producción en este orden:
+La entrada canónica es `index.html`. El stack estable conserva:
 
 1. `src/editor-base.html` — UI, compositor, WebGL y Verlet base.
-2. `src/editor-features.js` — capas, roles, smart spawn, layouts, texto y assets.
+2. `src/editor-features.js` — capas, roles, layouts, texto y assets.
 3. `src/state-sync.js` — sincronización de formato/proyecto/historial.
-4. `src/composition-tools.js` — blank project, edición avanzada, background, Brand Kit y assets.
-5. `src/interaction-stable.js` — ruta de grab/drag validada; no reemplaza el render físico.
-6. `src/production.js` — Full Bleed, PNG, JSON, grabación y HTML interactivo.
-7. `src/delivery.js` — MP4, ZIP, Share/Embed y acceso al laboratorio A/B.
-
-Los antiguos `fix*.js` y `review-v*.html` se retiraron del árbol de producción. La funcionalidad se conserva bajo nombres semánticos en `src/`.
+4. `src/composition-tools.js` — edición avanzada, Brand Kit y assets.
+5. `src/interaction-stable.js` — ruta física grab/drag validada.
+6. `src/production.js` — Full Bleed, PNG, JSON, grabación e Interactive HTML.
+7. `src/delivery.js` — MP4, ZIP, Share/Embed y laboratorio A/B.
 
 ## Capacidades actuales
 
-- Proyecto vacío por defecto; L.A.P.D. queda como plantilla opcional.
 - Formatos 9:16, 1:1 y 16:9.
-- Imágenes, vídeos, logos y texto como capas editables.
-- Full Bleed real para imagen/vídeo (`x=0`, `y=0`, `w=1`, `h=1`, `cover`).
+- Imagen, vídeo, logo y texto como capas editables.
+- Full Bleed real para imagen/vídeo.
 - Crop, zoom, fit, rotación, tamaño, opacidad, orden y lock.
-- Smart spawn, roles y layouts.
-- Brand Kit, templates, Asset Library, autosave, Undo/Redo.
-- Física WebGL/Verlet con mouse y touch: grab, drag, stretch, release.
-- Export DESIGN PNG y FABRIC FRAME PNG.
-- Grabación del canvas WebGL a vídeo.
-- Descarga MP4 directa cuando el navegador la soporta; fallback WebM→MP4 mediante ffmpeg.wasm.
-- JSON portable con assets embebidos e importación round-trip.
-- HTML interactivo autocontenido.
-- ZIP estructurado con `index.html`, `project.json`, `README.txt` y `assets/` originales.
-- Share URL comprimida para piezas pequeñas/medias y generación de iframe.
-- Viewer limpio en `view/`.
-- Laboratorio aislado de física A/B en `labs/physics-ab.html`.
-
-## Share / Embed
-
-`COPY SHARE URL` comprime el HTML interactivo autocontenido con `CompressionStream` y lo introduce en el fragmento `#p=` de `view/`. El fragmento no se envía al servidor; el viewer lo descomprime en el navegador.
-
-Para proyectos con vídeos pesados, una URL gigante no es un formato de distribución fiable. En ese caso se debe usar `DOWNLOAD INTERACTIVE` o `DOWNLOAD ZIP` y alojar ese artefacto en la web/hosting del cliente. El iframe generado funciona directamente cuando la pieza entra dentro del límite práctico del Share URL.
-
-## MP4
-
-La grabación usa `canvas.captureStream(60)` + `MediaRecorder`. Si el navegador puede grabar H.264/MP4, la descarga es directa. Si solo genera WebM, `DOWNLOAD MP4` carga ffmpeg.wasm bajo demanda y transcodifica a H.264/yuv420p.
+- Smart spawn, roles, layouts, Brand Kit, templates, Asset Library, autosave y Undo/Redo.
+- Classic Fabric WebGL/Verlet: grab, drag, stretch y release.
+- Export PNG, grabación WebGL, MP4/WebM, JSON portable, Interactive HTML, ZIP, Share URL e iframe.
 
 ## Regla de estabilidad física
 
-El motor Classic Fabric / Verlet validado queda protegido. Nuevas funciones no deben sustituirlo de forma destructiva. Los nuevos motores se integran mediante una capa `Surface Engine Manager`, se validan de forma aislada y deben poder activarse/desactivarse sin alterar capas, proyectos, assets, exportación ni el motor Classic.
+`Classic Fabric / Verlet` queda protegido. Los motores nuevos se integran mediante `Surface Engine Manager` y deben poder activarse/desactivarse sin reescribir el renderer Classic ni perder capas, proyectos o assets.
 
 ## Fase 4 — Dynamic 3D Surface Engines
 
-BANDEROLAS PRO ya dispone de la base multimotor y de `3D Paper` conectado al compositor BANDEROLAS mediante CanvasTexture viva.
-
 Arquitectura actual:
 
-- `Classic Fabric` — motor WebGL/Verlet actual, protegido.
-- `3D Paper` — fuente exacta ThreeUI vendorizada y verificada por SHA-256.
-- `Surface Engine Manager` — cambio reversible entre motores sin reconstruir la creatividad.
-- `Paper Studio` — variantes Original, Japanese, Certificate y Site of the Year con controles en vivo de material, profundidad, iluminación, motion e interacción.
-- `Woven Cloth` — siguiente motor objetivo; todavía bloqueado hasta source-lock exacto.
+- `Classic Fabric` — motor WebGL/Verlet estable.
+- `3D Paper` — fuentes ThreeUI exactas vendorizadas y verificadas por SHA-256.
+- `Surface Engine Manager` — cambio reversible entre superficies.
+- `Paper Studio` — Original, Japanese, Certificate y Site of the Year.
+- `Woven Cloth` — siguiente motor objetivo; pendiente de source-lock exacto.
 
-### Paper Studio 4.4
+## Paper Studio 4.4R — Native Fidelity
 
-Presets de material:
+La primera iteración 4.4 sustituyó por completo el artwork de `makeCertTexture()` y el gate visual humano detectó que las cuatro variantes perdían demasiada identidad. 4.4R corrige la arquitectura con un principio: **ThreeUI conserva el diseño físico; BANDEROLAS sustituye o añade el contenido**.
 
-- Native / Variant authored
-- Opaque Paper
-- Transparent Sheet
-- Translucent / Backlit
-- Glass Paper
-- Soft Washi
-- Iridescent Film
+### Qué se conserva del original
 
-Presets de movimiento:
+- El `makeCertTexture()` original de cada variante se ejecuta; no se reemplaza.
+- Se mantiene el artwork no textual nativo: marcos, formas, ornamentos, gradientes, texturas y elementos gráficos.
+- Se conservan DOF, grain, vignette, atmósfera, geometría, shader, luces, material y movimiento originales.
+- Solo se suprime el copy demo original durante el render del canvas y el gran `<h1>` demo del fondo DOM.
+- `Material → Native / EXACT ThreeUI · no overrides` restaura los valores reales capturados de la variante y no los aproxima mediante presets BANDEROLAS.
+- `Motion → Native ThreeUI` conserva el comportamiento original; los perfiles custom son opcionales.
 
-- Native ThreeUI
-- Calm
-- Float
-- Tilt / Hover
-- Inertial Spin
-- Dynamic
+### BANDEROLAS Content Layer
 
-Los controles de transparencia, translucencia, backlight, roughness, reflection, clearcoat, iridescence, profundidad, perspectiva, luz, intensidad, idle, inertia, tilt, float y sensibilidad del pointer se guardan dentro de `state.surface` schema v3.
+`src/surfaces/paper3d-native-fidelity.js` genera internamente una composición transparente desde el mismo `state.elements`; no existe un segundo editor visible.
 
-Documentación de esta fase:
+Soporta:
+
+- imagen;
+- vídeo LIVE;
+- logo;
+- texto;
+- orden de capas;
+- crop, zoom, fit, opacidad, rotación y tipografía.
+
+Modos de contenido:
+
+- `Native + Content` — recomendado; conserva el shell nativo y superpone el contenido BANDEROLAS.
+- `Native Safe Layout` — conserva el shell y aplica el contenido dentro de un inset configurable para respetar ornamentos.
+- `Full Bleed · replace artwork` — conserva la opción 4.3 para usar la creatividad a sangre sobre la superficie 3D.
+
+El estado `state.surface` usa schema v4 e incluye `content.mode`, `content.opacity` y `content.safeInset`, además de variant/material/motion/interaction.
+
+### Advanced Overrides
+
+Siguen disponibles Opaque, Transparent, Translucent/Backlit, Glass Paper, Soft Washi e Iridescent Film, junto con Calm, Float, Tilt/Hover, Inertial Spin y Dynamic. Son modificaciones opcionales. Para comparar con máxima fidelidad los cuatro originales se debe usar `Native` tanto en Material como en Motion.
+
+## Source lock
+
+Los originales ThreeUI permanecen inmutables bajo `vendor/threeui/3d-paper/` y se verifican contra `SOURCE_LOCK.json`. La adaptación BANDEROLAS vive exclusivamente fuera de `vendor/`.
+
+Documentación principal:
 
 - `docs/ROADMAP_PHASE_4_DYNAMIC_SURFACES.md`
 - `docs/THREEUI_INTEGRATION_SPEC.md`
@@ -101,6 +96,6 @@ Fase 3: ✅ cerrada y mergeada a `main`.
 Fase 4.1 — Surface Engine Foundation: ✅ mergeada.  
 Fase 4.2 — ThreeUI Source Lock + 3D Paper Original: ✅ mergeada.  
 Fase 4.3 — Dynamic CanvasTexture Adapter: ✅ mergeada.  
-Fase 4.4 — Paper Studio variants + premium controls: 🟡 implementada en rama y pendiente de gate visual humano.  
+Fase 4.4R — Native Fidelity Paper Studio: 🟡 implementada en PR #4 y pendiente exclusivamente de gate visual humano.  
 Fase 4.5 — Woven Cloth: ⏳ pendiente.  
 Fase 4.6 — Export / Interactive / Share parity: ⏳ pendiente.
