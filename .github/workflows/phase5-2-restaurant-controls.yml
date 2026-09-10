@@ -1,0 +1,29 @@
+name: Phase 5.2 Restaurant Controls Verify
+
+on:
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'src/presets/restaurant-menu-premium.js'
+      - 'src/presets/restaurant-menu-controls.js'
+      - 'scripts/verify-phase5-2-restaurant-controls.mjs'
+      - '.github/workflows/phase5-2-restaurant-controls.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: JavaScript syntax
+        run: |
+          node --check src/presets/restaurant-menu-premium.js
+          node --check src/presets/restaurant-menu-controls.js
+      - name: Phase 5.2 contract
+        run: node scripts/verify-phase5-2-restaurant-controls.mjs

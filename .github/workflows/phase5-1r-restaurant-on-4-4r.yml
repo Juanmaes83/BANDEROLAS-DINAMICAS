@@ -1,0 +1,24 @@
+name: Phase 5.1R Verify
+
+on:
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'src/presets/restaurant-menu-premium.js'
+      - 'scripts/verify-phase5-1-restaurant-on-4-4r.mjs'
+      - '.github/workflows/phase5-1r-restaurant-on-4-4r.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Restaurant Menu on exact 4.4R stack
+        run: node scripts/verify-phase5-1-restaurant-on-4-4r.mjs

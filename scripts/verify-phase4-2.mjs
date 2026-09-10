@@ -36,8 +36,8 @@ const schema = await fs.readFile('src/surfaces/surface-schema.js','utf8');
 if (!/paper3d:\s*true/.test(schema)) throw new Error('paper3d feature flag is not enabled');
 const adapter = await fs.readFile('src/surfaces/paper3d-adapter.js','utf8');
 if (!adapter.includes("manager.register('paper3d'")) throw new Error('paper3d adapter is not registered');
-if (!adapter.includes('loadVerifiedSource()')) throw new Error('exact vendored source preflight is missing');
-if (!adapter.includes('iframe.srcdoc = runtimeHtml') && !adapter.includes('iframe.srcdoc = html')) {
+if (!/loadVerifiedSource\s*\(/.test(adapter)) throw new Error('exact vendored source preflight is missing');
+if (!/iframe\.srcdoc\s*=\s*(runtimeHtml|html)/.test(adapter)) {
   throw new Error('verified ThreeDPaper runtime is not mounted with srcdoc');
 }
 
