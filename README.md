@@ -1,8 +1,8 @@
 # BANDEROLAS PRO
 
-Editor de creatividades interactivas sobre una superficie física WebGL/Verlet. La composición (imagen, vídeo, logos y texto) se renderiza en una única textura que se aplica a la tela, por lo que todo el contenido se deforma junto con la banderola.
+Editor de creatividades interactivas sobre superficies físicas y 3D. La composición (imagen, vídeo, logos y texto) se renderiza en una única textura que se aplica al motor visual activo, de modo que el contenido forma parte real de la superficie y responde al movimiento, deformación, profundidad e interacción.
 
-## Producción
+## Producción estable — Fases 1 a 3
 
 La entrada canónica es `index.html`. Carga el editor base y los módulos de producción en este orden:
 
@@ -16,7 +16,7 @@ La entrada canónica es `index.html`. Carga el editor base y los módulos de pro
 
 Los antiguos `fix*.js` y `review-v*.html` se retiraron del árbol de producción. La funcionalidad se conserva bajo nombres semánticos en `src/`.
 
-## Capacidades
+## Capacidades actuales
 
 - Proyecto vacío por defecto; L.A.P.D. queda como plantilla opcional.
 - Formatos 9:16, 1:1 y 16:9.
@@ -44,26 +44,32 @@ Para proyectos con vídeos pesados, una URL gigante no es un formato de distribu
 
 ## MP4
 
-La grabación usa `canvas.captureStream(60)` + `MediaRecorder`. Si el navegador puede grabar H.264/MP4, la descarga es directa. Si solo genera WebM, `DOWNLOAD MP4` carga ffmpeg.wasm bajo demanda y transcodifica a H.264/yuv420p. La primera conversión requiere descargar el core WASM (~31 MB).
+La grabación usa `canvas.captureStream(60)` + `MediaRecorder`. Si el navegador puede grabar H.264/MP4, la descarga es directa. Si solo genera WebM, `DOWNLOAD MP4` carga ffmpeg.wasm bajo demanda y transcodifica a H.264/yuv420p.
 
 ## Regla de estabilidad física
 
-El motor de interacción validado queda protegido. Nuevas funciones de editor, exportación o publicación no deben reemplazar `render()`, ni el integrador Verlet, ni la ruta base de `grabbedParticle`. Cualquier motor alternativo se prueba primero en `labs/`.
+El motor Classic Fabric / Verlet validado queda protegido. Nuevas funciones no deben sustituirlo de forma destructiva. Los nuevos motores se integran mediante una capa `Surface Engine Manager`, se validan de forma aislada y deben poder activarse/desactivarse sin alterar capas, proyectos, assets, exportación ni el motor Classic.
 
-## Distribución
+## Nueva fase — Dynamic 3D Surface Engines
 
-Una misma creatividad puede salir como:
+La siguiente evolución convierte BANDEROLAS PRO en un editor multimotor de superficies dinámicas 3D manteniendo el mismo panel y el mismo compositor. Objetivo inicial:
 
-- PNG de diseño plano.
-- PNG del frame físico WebGL.
-- WebM / MP4 grabado.
-- JSON portable.
-- HTML interactivo.
-- ZIP interactivo estructurado.
-- Share URL / iframe cuando el tamaño del payload lo permite.
+- `Classic Fabric` — motor WebGL/Verlet actual, protegido.
+- `3D Paper` — fuente exacta ThreeUI, con variantes Original, Japanese, Certificate y Site of the Year.
+- `Woven Cloth` — fuente exacta ThreeUI/Neuform, con variantes Woven, Iridescent, Atelier y Washi.
+- Transparencia, translucencia, reflexión, profundidad y backlight cuando el motor lo soporte.
+- Nuevos movimientos: float, tilt, inertial spin, wind/wave y combinaciones controladas.
+- El mismo contenido de BANDEROLAS PRO debe poder cambiar de motor sin reconstruir la creatividad.
+- Todas las salidas existentes (PNG, vídeo, MP4, JSON, Interactive, ZIP, Share e iframe) deben conservar el motor y sus parámetros.
+
+Documentación de esta fase:
+
+- `docs/ROADMAP_PHASE_4_DYNAMIC_SURFACES.md`
+- `docs/THREEUI_INTEGRATION_SPEC.md`
 
 ## Estado
 
-Fase 1: cerrada.  
-Fase 2: cerrada.  
-Fase 3: cierre de producción implementado en la rama de revisión; pendiente únicamente de la validación humana final antes de merge a `main`.
+Fase 1: ✅ cerrada y mergeada a `main`.  
+Fase 2: ✅ cerrada y mergeada a `main`.  
+Fase 3: ✅ cerrada y mergeada a `main`.  
+Fase 4 — Dynamic 3D Surface Engines: 🟡 documentación y roadmap abiertos en `feat/dynamic-3d-surface-engines`; implementación pendiente de aprobación por subfase.
