@@ -30,7 +30,7 @@
     schemaVersion: VERSION,
     engine: 'paper3d',
     variant: 'original',
-    content: Object.freeze({mode:'native-content', opacity:1, safeInset:0.08}),
+    content: Object.freeze({mode:'native-layout', opacity:1, safeInset:0.08}),
     material: Object.freeze({
       preset:'native', opacity:1, transparency:0, translucency:0,
       roughness:0.06, reflection:0.575, depth:0.55, clearcoat:1,
