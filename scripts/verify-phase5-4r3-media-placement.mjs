@@ -1,0 +1,23 @@
+import fs from 'node:fs';
+import vm from 'node:vm';
+const read=p=>fs.readFileSync(new URL('../'+p,import.meta.url),'utf8');
+const index=read('index.html');
+const src=read('src/workspace-media-placement-controls.js');
+const fail=[];const ok=(v,m)=>v?console.log('PASS '+m):fail.push(m);
+try{new vm.Script(src,{filename:'workspace-media-placement-controls.js'});ok(true,'media placement controls parse');}catch(e){fail.push('parse: '+e.message);}
+ok(index.includes('workspace-media-placement-controls.js?build=5.4r4'),'5.4R4 module cache-bust is active');
+ok(src.includes("const VERSION='5.4R4'"),'module identifies Phase 5.4R4');
+ok(src.includes('MEDIA ON THIS PAGE')&&src.includes('REPLACE FILE')&&src.includes('REMOVE FROM PAGE'),'placed media exposes direct replace/remove controls');
+ok(src.includes('switchToEdit')&&src.includes('.mode-btn[data-mode="edit"]')&&src.includes('btn.click()'),'EDIT action routes through the stable mode button');
+ok(src.includes('selectPlacedMedia')&&src.includes('setSelected(id)'),'EDIT action selects the real editor element');
+ok(src.includes("state?.selectedId||''")&&src.includes("state?.mode||''"),'panel signature reacts to selection and mode changes');
+ok(src.includes('ws-page-media-item ${selected?\'selected\':\'\'}')&&src.includes('SELECTED'),'selected placement receives visible feedback');
+ok(src.includes('QUICK EDIT')&&src.includes('data-placement-prop="x"')&&src.includes('data-placement-prop="w"')&&src.includes('data-placement-prop="fit"'),'selected media exposes visible position/size/fit controls');
+ok(src.includes("quickRange('Zoom','zoom'")&&src.includes("quickRange('Crop X','cropX'")&&src.includes("quickRange('Crop Y','cropY'"),'selected media exposes visible zoom/crop controls');
+ok(src.includes('!el.role'),'only user-added generic media is removable here');
+ok(src.includes('state.elements=(state.elements||[]).filter(x=>x.id!==id)'),'remove deletes placement from active page state');
+ok(src.includes('await putAsset(assetId,file)')&&src.includes('await loadRuntimeAsset'),'replace persists replacement asset');
+ok(src.includes("pagesApi()?.saveActive?.({captureGlobal:false})"),'selection edits persist active document page');
+ok(src.includes("$('#ws-media-rescan')?.click()"),'media library is rescanned after placement asset changes');
+ok(!src.includes("getContext('webgl")&&!src.includes('requestAnimationFrame('),'no new WebGL context or RAF loop');
+if(fail.length){console.error('\nPHASE 5.4R4 VERIFY FAILED');fail.forEach(x=>console.error('FAIL '+x));process.exit(1);}console.log('\nPHASE 5.4R4 MEDIA SELECTION VERIFY: PASS');

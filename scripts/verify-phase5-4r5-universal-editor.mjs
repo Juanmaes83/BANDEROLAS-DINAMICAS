@@ -1,0 +1,23 @@
+import fs from 'node:fs';
+import vm from 'node:vm';
+const read=p=>fs.readFileSync(new URL('../'+p,import.meta.url),'utf8');
+const index=read('index.html');
+const src=read('src/workspace-universal-element-editor.js');
+const fail=[];const ok=(v,m)=>v?console.log('PASS '+m):fail.push(m);
+try{new vm.Script(src,{filename:'workspace-universal-element-editor.js'});ok(true,'universal editor parses');}catch(e){fail.push('parse: '+e.message);}
+ok(index.includes('workspace-universal-element-editor.js?build=5.4r5'),'5.4R5 module is loaded last');
+ok(src.includes("const VERSION='5.4R5'"),'module identifies Phase 5.4R5');
+ok(src.includes('UNIVERSAL CONTENT EDITOR')&&src.includes('+ IMAGE')&&src.includes('+ VIDEO')&&src.includes('+ TEXT')&&src.includes('+ LOGO'),'primary add actions are visible');
+ok(src.includes('function caps(el)')&&src.includes('replaceable')&&src.includes('deletable')&&src.includes('hideable')&&src.includes('lockable'),'capability registry controls safe actions');
+ok(src.includes("document.querySelector('.mode-btn[data-mode=\"edit\"]')")&&src.includes('setSelected(id)'),'selection routes through stable edit mode and canonical selectedId');
+ok(src.includes('STRUCTURED_TEXT')&&src.includes('EDIT RESTAURANT DATA'),'structured restaurant text keeps semantic editing path');
+ok(src.includes('REPLACE ${String(el.type).toUpperCase()}')&&src.includes('geometry preserved'),'selected media can be replaced without geometry reset');
+ok(src.includes('POSITION & SIZE')&&src.includes("numberField('X','x'")&&src.includes("numberField('Y','y'")&&src.includes("numberField('Width','w'")&&src.includes("numberField('Height','h'"),'selected elements expose position and size');
+ok(src.includes('Zoom')&&src.includes('Crop X')&&src.includes('Crop Y'),'media exposes zoom and crop');
+ok(src.includes('LOCK')&&src.includes('HIDE')&&src.includes('DUPLICATE')&&src.includes('DELETE ELEMENT'),'element lifecycle actions are explicit');
+ok(src.includes('PROJECT · SAVED / READY')&&src.includes("$('#ws-save')?.click()"),'save status and save action are visible');
+ok(src.includes('data-ue-select-role')&&src.includes('decorateRestaurantControls'),'restaurant controls can select real canvas elements');
+ok(src.includes("hit?.locked")&&src.includes('stopImmediatePropagation'),'locked elements remain selectable from canvas');
+ok(src.includes('#ws-page-media-editor{display:none!important}')&&src.includes('#ws-media-core>.ws-media-actions{display:none!important}'),'superseded media editor/actions are hidden to reduce duplication');
+ok(!src.includes("getContext('webgl")&&!src.includes('requestAnimationFrame('),'no new WebGL context or RAF loop');
+if(fail.length){console.error('\nPHASE 5.4R5 VERIFY FAILED');fail.forEach(x=>console.error('FAIL '+x));process.exit(1);}console.log('\nPHASE 5.4R5 UNIVERSAL SELECT & EDIT VERIFY: PASS');

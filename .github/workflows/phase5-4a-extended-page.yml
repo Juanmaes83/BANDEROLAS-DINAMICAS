@@ -1,0 +1,23 @@
+name: Phase 5.4A Extended Page Verify
+
+on:
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'src/presets/restaurant-menu-extended-page.js'
+      - 'src/presets/restaurant-menu-pages.js'
+      - 'scripts/verify-phase5-4a-extended-page.mjs'
+      - '.github/workflows/phase5-4a-extended-page.yml'
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: JavaScript syntax
+        run: node --check src/presets/restaurant-menu-extended-page.js
+      - name: Phase 5.4A contract
+        run: node scripts/verify-phase5-4a-extended-page.mjs

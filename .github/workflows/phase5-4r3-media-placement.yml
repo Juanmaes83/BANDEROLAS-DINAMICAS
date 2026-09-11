@@ -1,0 +1,23 @@
+name: Phase 5.4R4 Media Selection Verify
+on:
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'src/workspace-media-placement-controls.js'
+      - 'scripts/verify-phase5-4r3-media-placement.mjs'
+      - '.github/workflows/phase5-4r3-media-placement.yml'
+  push:
+    branches:
+      - feat/phase5-4a-extended-restaurant-page
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: JavaScript syntax
+        run: node --check src/workspace-media-placement-controls.js
+      - name: Phase 5.4R4 contract
+        run: node scripts/verify-phase5-4r3-media-placement.mjs

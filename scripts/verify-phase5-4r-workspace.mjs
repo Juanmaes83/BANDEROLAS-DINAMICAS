@@ -1,0 +1,24 @@
+import fs from 'node:fs';
+import vm from 'node:vm';
+const read=p=>fs.readFileSync(new URL('../'+p,import.meta.url),'utf8');
+const index=read('index.html');
+const ws=read('src/workspace-cleanup.js');
+const fail=[];const ok=(v,m)=>v?console.log('PASS '+m):fail.push(m);
+try{new vm.Script(ws,{filename:'workspace-cleanup.js'});ok(true,'workspace module parses');}catch(e){fail.push('workspace parse: '+e.message);}
+ok(index.includes('workspace-cleanup.js?build=5.4r'),'5.4R workspace boots');
+ok(index.indexOf('restaurant-menu-extended-page.js?build=5.4a')<index.indexOf('workspace-cleanup.js?build=5.4r'),'workspace loads after extended-page controller');
+for(const label of ['1 · DOCUMENT','2 · CONTENT','3 · DESIGN','4 · SURFACE','5 · OUTPUT'])ok(ws.includes(label),'five-step workspace: '+label);
+ok(ws.includes('ws-health-row')&&ws.includes('ws-red')&&ws.includes('ws-amber')&&ws.includes('ws-green'),'red/amber/green guide lights exist');
+ok(ws.includes('GUIDE ·')&&ws.includes('READY')&&ws.includes('CHECK')&&ws.includes('FIX'),'health guidance has explicit user states');
+ok(ws.includes('ws-page-strip')&&ws.includes('ws-page-card'),'page filmstrip exists');
+ok(ws.includes('duplicatePage')&&ws.includes("addPage?.('full')"),'duplicate creates a visible second page in filmstrip flow');
+ok(ws.includes('Portrait · Standard 9:16')&&ws.includes('Portrait · Tall 9:24')&&ws.includes('Portrait · Long 9:32')&&ws.includes('Portrait · Extra 9:40')&&ws.includes('Square · 1:1')&&ws.includes('Landscape · 16:9'),'format and height choices are unified in Document');
+ok(ws.includes("BanderolasPaperStudio?.changeVariant?."),'visible Paper Variant uses Paper Studio API directly');
+ok(ws.includes('ws-paper-variant')&&ws.includes('Original')&&ws.includes('Japanese')&&ws.includes('Certificate')&&ws.includes('Site of the Year'),'all four Paper variants exist in one user-facing control');
+ok(ws.includes("legacyVariant.style.display='none'")&&ws.includes("legacyEngine.style.display='none'"),'legacy engine/variant controls are hidden from user workspace');
+ok(ws.includes('ws-classic-only')&&ws.includes('ws-paper-only'),'surface controls are contextual for Classic vs Paper');
+ok(ws.includes('Advanced editing')&&ws.includes('Brand & templates · Advanced')&&ws.includes('Surface controls · Advanced')&&ws.includes('Production, delivery & export · Advanced'),'advanced capability is retained but collapsed');
+ok(!ws.includes('requestAnimationFrame('),'workspace adds no render loop');
+ok(!ws.includes("getContext('webgl")&&!ws.includes('WebGLRenderingContext'),'workspace adds no WebGL context');
+ok(!ws.includes('surfaceManager.use('),'workspace does not recreate/switch surfaces directly');
+if(fail.length){console.error('\nPHASE 5.4R WORKSPACE VERIFY FAILED');fail.forEach(x=>console.error('FAIL '+x));process.exit(1);}console.log('\nPHASE 5.4R GUIDED WORKSPACE VERIFY: PASS');
