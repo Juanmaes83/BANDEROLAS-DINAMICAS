@@ -1,0 +1,24 @@
+name: Phase 5.4R2 Hardening Verify
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'src/workspace-hardening.js'
+      - 'src/workspace-cleanup.js'
+      - 'index.html'
+      - 'scripts/verify-phase5-4r2-hardening.mjs'
+      - '.github/workflows/phase5-4r2-hardening.yml'
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: JavaScript syntax
+        run: node --check src/workspace-hardening.js
+      - name: Phase 5.4R2 contract
+        run: node scripts/verify-phase5-4r2-hardening.mjs
