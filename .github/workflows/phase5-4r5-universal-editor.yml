@@ -1,0 +1,23 @@
+name: Phase 5.4R5 Universal Editor Verify
+on:
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'src/workspace-universal-element-editor.js'
+      - 'scripts/verify-phase5-4r5-universal-editor.mjs'
+      - '.github/workflows/phase5-4r5-universal-editor.yml'
+  push:
+    branches:
+      - feat/phase5-4a-extended-restaurant-page
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: JavaScript syntax
+        run: node --check src/workspace-universal-element-editor.js
+      - name: Phase 5.4R5 contract
+        run: node scripts/verify-phase5-4r5-universal-editor.mjs
