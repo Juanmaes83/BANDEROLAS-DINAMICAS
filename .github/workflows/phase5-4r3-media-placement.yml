@@ -1,4 +1,4 @@
-name: Phase 5.4R3 Media Placement Verify
+name: Phase 5.4R4 Media Selection Verify
 on:
   pull_request:
     paths:
@@ -19,5 +19,5 @@ jobs:
           node-version: 22
       - name: JavaScript syntax
         run: node --check src/workspace-media-placement-controls.js
-      - name: Phase 5.4R3 contract
+      - name: Phase 5.4R4 contract
         run: node scripts/verify-phase5-4r3-media-placement.mjs
