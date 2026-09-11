@@ -1,0 +1,22 @@
+name: Phase 5.4R7 Single UI Owner Verify
+
+on:
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'src/workspace-single-ui-owner.js'
+      - 'scripts/verify-phase5-4r7-single-ui-owner.mjs'
+      - '.github/workflows/phase5-4r7-single-ui-owner.yml'
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: JavaScript syntax
+        run: node --check src/workspace-single-ui-owner.js
+      - name: Phase 5.4R7 contract
+        run: node scripts/verify-phase5-4r7-single-ui-owner.mjs
