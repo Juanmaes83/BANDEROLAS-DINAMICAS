@@ -13,7 +13,7 @@ ok(src.includes('selectPlacedMedia')&&src.includes('setSelected(id)'),'EDIT acti
 ok(src.includes("state?.selectedId||''")&&src.includes("state?.mode||''"),'panel signature reacts to selection and mode changes');
 ok(src.includes('ws-page-media-item ${selected?\'selected\':\'\'}')&&src.includes('SELECTED'),'selected placement receives visible feedback');
 ok(src.includes('QUICK EDIT')&&src.includes('data-placement-prop="x"')&&src.includes('data-placement-prop="w"')&&src.includes('data-placement-prop="fit"'),'selected media exposes visible position/size/fit controls');
-ok(src.includes('data-placement-live="zoom"')&&src.includes('data-placement-live="cropX"')&&src.includes('data-placement-live="cropY"'),'selected media exposes visible zoom/crop controls');
+ok(src.includes("quickRange('Zoom','zoom'")&&src.includes("quickRange('Crop X','cropX'")&&src.includes("quickRange('Crop Y','cropY'"),'selected media exposes visible zoom/crop controls');
 ok(src.includes('!el.role'),'only user-added generic media is removable here');
 ok(src.includes('state.elements=(state.elements||[]).filter(x=>x.id!==id)'),'remove deletes placement from active page state');
 ok(src.includes('await putAsset(assetId,file)')&&src.includes('await loadRuntimeAsset'),'replace persists replacement asset');
