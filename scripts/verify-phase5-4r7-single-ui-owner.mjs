@@ -1,0 +1,22 @@
+import fs from 'node:fs';
+import vm from 'node:vm';
+const read=p=>fs.readFileSync(new URL('../'+p,import.meta.url),'utf8');
+const index=read('index.html');
+const src=read('src/workspace-single-ui-owner.js');
+const fail=[];
+const ok=(v,m)=>v?console.log('PASS '+m):fail.push(m);
+try{new vm.Script(src,{filename:'workspace-single-ui-owner.js'});ok(true,'R7 single UI owner parses');}catch(e){fail.push('parse: '+e.message);}
+ok(index.includes('workspace-single-ui-owner.js?build=5.4r7'),'R7 is loaded');
+ok(!index.includes('workspace-single-control-surface.js?build=5.4r6'),'R6 competing DOM owner is not loaded');
+ok(src.includes("const VERSION='5.4R7'"),'R7 version is explicit');
+ok(src.includes('EDIT CONTENT')&&src.includes('FABRIC / INTERACT'),'sticky mode labels are explicit');
+ok(src.includes('#r7-controlbar{position:sticky'),'mode/save bar stays sticky');
+ok(src.includes('#ws-content-host{display:contents!important}'),'restaurant content host remains visible');
+ok(src.includes("summary.textContent='RESTAURANT CONTENT'")&&src.includes("host.appendChild(restaurant)"),'restaurant controls remain in their stable content host');
+ok(src.includes("assets.id='r7-assets-details'")&&src.includes("sum.textContent='ASSETS / MEDIA'"),'asset library is promoted as a real collapsible section');
+ok(src.includes("summary.textContent='ADVANCED EDITING'")&&src.includes("#ws-content-advanced"),'advanced editing keeps its populated legacy controls');
+ok(src.includes('if(!initialCollapseDone)')&&src.includes('initialCollapseDone=true'),'collapsible sections are initialized once instead of being forced closed forever');
+ok(src.includes('FABRIC / INTERACT ACTIVE')&&src.includes("body.classList.toggle('r7-interact',!edit)"),'interact mode visibly gates content editing');
+ok(src.includes("openContent({scroll:true})")&&src.includes('state.selectedId!==lastSelected'),'direct selection opens the content inspector');
+ok(!src.includes("getContext('webgl")&&!src.includes('requestAnimationFrame('),'R7 adds no WebGL context or render loop');
+if(fail.length){console.error('\nPHASE 5.4R7 VERIFY FAILED');fail.forEach(x=>console.error('FAIL '+x));process.exit(1);}console.log('\nPHASE 5.4R7 SINGLE UI OWNER VERIFY: PASS');
