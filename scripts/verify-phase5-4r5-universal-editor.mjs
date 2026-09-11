@@ -12,8 +12,7 @@ ok(src.includes('function caps(el)')&&src.includes('replaceable')&&src.includes(
 ok(src.includes("document.querySelector('.mode-btn[data-mode=\"edit\"]')")&&src.includes('setSelected(id)'),'selection routes through stable edit mode and canonical selectedId');
 ok(src.includes('STRUCTURED_TEXT')&&src.includes('EDIT RESTAURANT DATA'),'structured restaurant text keeps semantic editing path');
 ok(src.includes('REPLACE ${String(el.type).toUpperCase()}')&&src.includes('geometry preserved'),'selected media can be replaced without geometry reset');
-ok(src.includes('POSITION & SIZE')&&src.includes("data-ue-prop=\"x\"")&&src.includes("data-ue-prop=\"w\""),'selected elements expose position and size');
-ok(src.includes("quick")===false || true,'verification loaded');
+ok(src.includes('POSITION & SIZE')&&src.includes("numberField('X','x'")&&src.includes("numberField('Y','y'")&&src.includes("numberField('Width','w'")&&src.includes("numberField('Height','h'"),'selected elements expose position and size');
 ok(src.includes('Zoom')&&src.includes('Crop X')&&src.includes('Crop Y'),'media exposes zoom and crop');
 ok(src.includes('LOCK')&&src.includes('HIDE')&&src.includes('DUPLICATE')&&src.includes('DELETE ELEMENT'),'element lifecycle actions are explicit');
 ok(src.includes('PROJECT · SAVED / READY')&&src.includes("$('#ws-save')?.click()"),'save status and save action are visible');
