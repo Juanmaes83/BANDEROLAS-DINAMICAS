@@ -1,0 +1,26 @@
+name: Phase 5.4R Guided Workspace Verify
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'index.html'
+      - 'src/workspace-cleanup.js'
+      - 'src/presets/restaurant-menu-pages.js'
+      - 'src/presets/restaurant-menu-extended-page.js'
+      - 'scripts/verify-phase5-4r-workspace.mjs'
+      - '.github/workflows/phase5-4r-workspace.yml'
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: JavaScript syntax
+        run: node --check src/workspace-cleanup.js
+      - name: Phase 5.4R workspace contract
+        run: node scripts/verify-phase5-4r-workspace.mjs
